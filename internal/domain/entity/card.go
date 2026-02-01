@@ -19,7 +19,7 @@ type Card struct {
 	Title       string  `gorm:"not null"`
 	Description *string `gorm:"type:varchar(500)"`
 
-	Priority CardPriority `gorm:"type:card_priority;default:'medium'"`
+	Priority CardPriority `gorm:"type:text;default:'medium'"`
 
 	Position   float64 `gorm:"not null"`
 	IsArchived bool    `gorm:"default:false"`
