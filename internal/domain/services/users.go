@@ -1,6 +1,8 @@
 package services
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"os"
@@ -119,6 +121,38 @@ func (s *userService) LoginExistingUser(email string, password string) (*JWTToke
 	return jwtTokens, nil
 }
 
+// Return newly generated access token or error
+func (s *userService) ValidateRefreshToken(refreshToken string) (string, error) {
+	const fn = "domain.service.ValidateRefreshToken"
+	log := slog.With(
+		slog.String("fn", fn),
+	)
+
+	hashedToken := hashToken(refreshToken)
+	refresh, err := s.userRepo.ValidateRefreshToken(hashedToken)
+	if err != nil {
+		if errors.Is(err, entity.ErrRefreshTokenNotFound) {
+			log.Error("provided token not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+			return "", entity.ErrRefreshTokenNotFound
+		}
+		log.Error("failed to get a refresh token from database", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		return "", err
+	}
+
+	if !refresh.IsValid() { // check if the token is expired or not
+		return "", entity.ErrRefreshTokenExpired
+	}
+
+	jwtTokens, err := generateJWTTokenPair(refresh.UserID)
+	if err != nil {
+		log.Error("failed to create JWT tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())},
+			slog.Attr{Key: "UserUUID", Value: slog.StringValue(refresh.UserID)})
+		return "", err
+	}
+
+	return jwtTokens.AccessToken, nil
+}
+
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
@@ -158,4 +192,10 @@ func generateJWTTokenPair(userUUID string) (*JWTTokenPair, error) {
 
 	return &JWTTokenPair{AccessToken: accessTokenString, RefreshToken: refreshTokenString,
 		RefreshExprireTime: refreshExpire, AccessExpireTime: accessExpire}, nil
+}
+
+func hashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	hashedToken := hex.EncodeToString(hash[:])
+	return hashedToken
 }
