@@ -2,9 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
+	httpserver "student-kanban/internal/adapters/http_server"
+	storage "student-kanban/internal/adapters/postgres"
 	"student-kanban/internal/config"
 	"student-kanban/internal/domain/entity"
+	"student-kanban/internal/domain/services"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -13,10 +18,25 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
-	_, err := MustInitDB(cfg)
+	db, err := MustInitDB(cfg)
 	if err != nil {
 		panic(err)
 	}
+
+	userRepo := storage.NewPostgresStorage(db)
+	userService := services.NewUserService(userRepo)
+	r := setUpHttpServer(userService)
+	if err := r.Run(cfg.Address); err != nil {
+		slog.Error("Failed to start server:", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+	}
+
+}
+
+func setUpHttpServer(userService httpserver.UserService) *gin.Engine {
+	r := gin.Default()
+	authController := httpserver.NewAuthController(userService)
+	httpserver.SetupAuthRoutes(r, authController)
+	return r
 }
 
 func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
