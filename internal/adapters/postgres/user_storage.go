@@ -9,15 +9,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type storage struct {
+type userStorage struct {
 	db *gorm.DB
 }
 
-func NewPostgresStorage(db *gorm.DB) *storage {
-	return &storage{db: db}
+func NewUserStorage(db *gorm.DB) *userStorage {
+	return &userStorage{db: db}
 }
 
-func (s *storage) CreateNewUser(user *entity.User) (string, error) {
+func (s *userStorage) CreateNewUser(user *entity.User) (string, error) {
 	const fn = "adapters.repository.CreateNewUser"
 
 	result := s.db.Create(&user)
@@ -33,7 +33,7 @@ func (s *storage) CreateNewUser(user *entity.User) (string, error) {
 	return user.ID.String(), nil
 }
 
-func (s *storage) GetUserByEmail(email string) (*entity.User, error) {
+func (s *userStorage) GetUserByEmail(email string) (*entity.User, error) {
 	const fn = "adapters.repository.GetUserByEmail"
 	var user *entity.User
 
@@ -49,7 +49,7 @@ func (s *storage) GetUserByEmail(email string) (*entity.User, error) {
 	return user, nil
 }
 
-func (s *storage) CreateRefreshToken(token *entity.RefreshToken) error {
+func (s *userStorage) CreateRefreshToken(token *entity.RefreshToken) error {
 	const fn = "adapters.repository.CreateRefreshToken"
 
 	result := s.db.Create(&token)
@@ -58,7 +58,7 @@ func (s *storage) CreateRefreshToken(token *entity.RefreshToken) error {
 	}
 	return nil
 }
-func (s *storage) ValidateRefreshToken(tokenValue string) (*entity.RefreshToken, error) {
+func (s *userStorage) ValidateRefreshToken(tokenValue string) (*entity.RefreshToken, error) {
 	const fn = "adapters.repository.ValidateRefreshToken"
 
 	var token entity.RefreshToken

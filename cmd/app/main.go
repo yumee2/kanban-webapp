@@ -23,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	userRepo := storage.NewPostgresStorage(db)
+	userRepo := storage.NewUserStorage(db)
 	userService := services.NewUserService(userRepo)
 	r := setUpHttpServer(userService)
 	if err := r.Run(cfg.Address); err != nil {
