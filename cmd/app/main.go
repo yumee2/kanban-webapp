@@ -53,7 +53,7 @@ func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&entity.User{}, &entity.Board{}, &entity.List{}, &entity.Card{})
+	err = db.AutoMigrate(&entity.User{}, &entity.Board{}, &entity.List{}, &entity.Card{}, &entity.RefreshToken{})
 
 	if err != nil {
 		return nil, err
