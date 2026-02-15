@@ -2,20 +2,24 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
-	httpserver "student-kanban/internal/adapters/http_server"
+	boardhttp "student-kanban/internal/adapters/http_server/boards"
+	userhttp "student-kanban/internal/adapters/http_server/users"
 	storage "student-kanban/internal/adapters/postgres"
 	"student-kanban/internal/config"
 	"student-kanban/internal/domain/entity"
 	"student-kanban/internal/domain/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 func main() {
+	LoadEnv()
 	cfg := config.MustLoad()
 
 	db, err := MustInitDB(cfg)
@@ -25,17 +29,25 @@ func main() {
 
 	userRepo := storage.NewUserStorage(db)
 	userService := services.NewUserService(userRepo)
-	r := setUpHttpServer(userService)
+
+	boardRepo := storage.NewBoardStorage(db)
+	boardService := services.NewBoardService(boardRepo)
+
+	r := setUpHttpServer(userService, boardService)
 	if err := r.Run(cfg.Address); err != nil {
 		slog.Error("Failed to start server:", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 	}
 
 }
 
-func setUpHttpServer(userService httpserver.UserService) *gin.Engine {
+func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService) *gin.Engine {
 	r := gin.Default()
-	authController := httpserver.NewAuthController(userService)
-	httpserver.SetupAuthRoutes(r, authController)
+
+	authController := userhttp.NewAuthController(userService)
+	boardController := boardhttp.NewBoardController(boardService)
+
+	userhttp.SetupAuthRoutes(r, authController)
+	boardhttp.SetupBoardRoutes(r, boardController)
 	return r
 }
 
@@ -60,4 +72,11 @@ func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func LoadEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 }

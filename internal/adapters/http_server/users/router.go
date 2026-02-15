@@ -1,14 +1,14 @@
-package httpserver
+package userhttp
 
 import "github.com/gin-gonic/gin"
 
-type AuthController interface {
+type UserController interface {
 	Register(ctx *gin.Context)
 	Login(ctx *gin.Context)
 	Refresh(ctx *gin.Context)
 }
 
-func SetupAuthRoutes(r *gin.Engine, authController AuthController) {
+func SetupAuthRoutes(r *gin.Engine, authController UserController) {
 	urlGroup := r.Group("/auth")
 	{
 		urlGroup.POST("/register", authController.Register)

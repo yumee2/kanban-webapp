@@ -1,4 +1,4 @@
-package httpserver
+package userhttp
 
 type registerRequest struct {
 	Email    string `json:"email" binding:"required,email"`

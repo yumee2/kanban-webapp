@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 const UserIDKey = "userID"
@@ -37,7 +38,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set(UserIDKey, userID)
+		userIDParsed, err := uuid.Parse(userID)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+			c.Abort()
+			return
+		}
+
+		c.Set(UserIDKey, userIDParsed)
 		c.Next()
 	}
 }
