@@ -20,3 +20,8 @@ var (
 	ErrInvalidOwnerID  = errors.New("invalid owner ID")
 	ErrBoardTitleEmpty = errors.New("board title cannot be empty")
 )
+
+// List related errors
+var (
+	ErrListNotFound = errors.New("list not found")
+)
