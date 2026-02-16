@@ -23,5 +23,7 @@ var (
 
 // List related errors
 var (
-	ErrListNotFound = errors.New("list not found")
+	ErrListNotFound     = errors.New("list not found")
+	ErrInvalidListTitle = errors.New("list title cannot be empty")
+	ErrInvalidPosition  = errors.New("invalid position value")
 )

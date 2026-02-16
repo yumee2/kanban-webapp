@@ -9,20 +9,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type ListRepository interface {
-	Create(ctx context.Context, list *entity.List) error
-	FindByID(ctx context.Context, id uuid.UUID) (*entity.List, error)
-	FindByBoardID(ctx context.Context, boardID uuid.UUID) ([]entity.List, error)
-	Update(ctx context.Context, list *entity.List) error
-	Delete(ctx context.Context, id uuid.UUID) error
-	UpdatePosition(ctx context.Context, id uuid.UUID, position float64) error
-}
-
 type listRepository struct {
 	db *gorm.DB
 }
 
-func NewListRepository(db *gorm.DB) ListRepository {
+func NewListRepository(db *gorm.DB) *listRepository {
 	return &listRepository{db: db}
 }
 
