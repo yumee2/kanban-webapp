@@ -9,7 +9,7 @@ type UserController interface {
 }
 
 func SetupAuthRoutes(r *gin.Engine, authController UserController) {
-	urlGroup := r.Group("/auth")
+	urlGroup := r.Group("/api/auth")
 	{
 		urlGroup.POST("/register", authController.Register)
 		urlGroup.POST("/login", authController.Login)
