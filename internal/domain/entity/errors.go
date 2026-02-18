@@ -27,3 +27,11 @@ var (
 	ErrInvalidListTitle = errors.New("list title cannot be empty")
 	ErrInvalidPosition  = errors.New("invalid position value")
 )
+
+// Cards related errors
+var (
+	ErrCardNotFound        = errors.New("card not found")
+	ErrInvalidCardTitle    = errors.New("card title cannot be empty")
+	ErrInvalidListID       = errors.New("invalid list ID")
+	ErrInvalidCardPriority = errors.New("invalid card priority")
+)

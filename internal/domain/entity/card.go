@@ -24,3 +24,11 @@ type Card struct {
 	Position   float64 `gorm:"not null"`
 	IsArchived bool    `gorm:"default:false"`
 }
+
+func (p CardPriority) IsValid() bool {
+	switch p {
+	case PriorityLow, PriorityMedium, PriorityHigh:
+		return true
+	}
+	return false
+}
