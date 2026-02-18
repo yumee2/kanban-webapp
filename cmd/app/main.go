@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	boardhttp "student-kanban/internal/adapters/http_server/boards"
+	listshttp "student-kanban/internal/adapters/http_server/lists"
 	userhttp "student-kanban/internal/adapters/http_server/users"
 	storage "student-kanban/internal/adapters/postgres"
 	"student-kanban/internal/config"
@@ -33,21 +34,26 @@ func main() {
 	boardRepo := storage.NewBoardStorage(db)
 	boardService := services.NewBoardService(boardRepo)
 
-	r := setUpHttpServer(userService, boardService)
+	listRepo := storage.NewListRepository(db)
+	listService := services.NewListService(listRepo, boardRepo)
+
+	r := setUpHttpServer(userService, boardService, listService)
 	if err := r.Run(cfg.Address); err != nil {
 		slog.Error("Failed to start server:", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 	}
 
 }
 
-func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService) *gin.Engine {
+func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService, listService listshttp.ListService) *gin.Engine {
 	r := gin.Default()
 
 	authController := userhttp.NewAuthController(userService)
 	boardController := boardhttp.NewBoardController(boardService)
+	listController := listshttp.NewListController(listService)
 
 	userhttp.SetupAuthRoutes(r, authController)
 	boardhttp.SetupBoardRoutes(r, boardController)
+	listshttp.SetupListRoutes(r, listController)
 	return r
 }
 

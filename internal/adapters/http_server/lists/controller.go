@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type listService interface {
+type ListService interface {
 	CreateList(ctx context.Context, dto services.CreateListDTO) (*services.ListDTO, error)
 	GetListByID(ctx context.Context, id uuid.UUID) (*services.ListDTO, error)
 	GetListsByBoardID(ctx context.Context, boardID uuid.UUID) ([]*services.ListDTO, error)
@@ -20,10 +20,10 @@ type listService interface {
 }
 
 type ListHandler struct {
-	listService listService
+	listService ListService
 }
 
-func NewListHandler(listService listService) *ListHandler {
+func NewListController(listService ListService) *ListHandler {
 	return &ListHandler{
 		listService: listService,
 	}

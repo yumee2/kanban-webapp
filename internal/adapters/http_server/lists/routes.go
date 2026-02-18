@@ -16,21 +16,21 @@ type ListController interface {
 }
 
 // RegisterRoutes registers all list-related routes
-func (h *ListHandler) SetupListRoutes(r *gin.Engine, listController ListController) {
+func SetupListRoutes(r *gin.Engine, listController ListController) {
 	authorized := r.Group("/api/lists")
 	authorized.Use(middleware.AuthMiddleware())
 	{
-		authorized.POST("", h.CreateList)
-		authorized.GET("/:id", h.GetList)
-		authorized.PUT("/:id", h.UpdateList)
-		authorized.DELETE("/:id", h.DeleteList)
-		authorized.PATCH("/:id/position", h.UpdatePosition)
+		authorized.POST("", listController.CreateList)
+		authorized.GET("/:id", listController.GetList)
+		authorized.PUT("/:id", listController.UpdateList)
+		authorized.DELETE("/:id", listController.DeleteList)
+		authorized.PATCH("/:id/position", listController.UpdatePosition)
 	}
 
 	// Nested route under boards
 	boards := r.Group("/api/boards")
 	boards.Use(middleware.AuthMiddleware())
 	{
-		boards.GET("/:id/lists", h.GetListsByBoard)
+		boards.GET("/:id/lists", listController.GetListsByBoard)
 	}
 }

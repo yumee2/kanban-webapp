@@ -111,3 +111,13 @@ func (r *listRepository) UpdatePosition(ctx context.Context, id uuid.UUID, posit
 
 	return nil
 }
+
+func (r *listRepository) GetMaxPosition(ctx context.Context, boardID uuid.UUID) (float64, error) {
+	var maxPos float64
+	err := r.db.WithContext(ctx).
+		Model(&entity.List{}).
+		Where("board_id = ?", boardID).
+		Select("COALESCE(MAX(position), 0)").
+		Scan(&maxPos).Error
+	return maxPos, err
+}

@@ -15,6 +15,7 @@ type ListRepository interface {
 	Update(ctx context.Context, list *entity.List) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	UpdatePosition(ctx context.Context, id uuid.UUID, position float64) error
+	GetMaxPosition(ctx context.Context, boardID uuid.UUID) (float64, error)
 }
 
 type CreateListDTO struct {
@@ -50,32 +51,33 @@ func NewListService(listRepo ListRepository, boardRepo BoardRepository) *listSer
 }
 
 func (s *listService) CreateList(ctx context.Context, dto CreateListDTO) (*ListDTO, error) {
-	// Validate input
 	if dto.Title == "" {
 		return nil, entity.ErrInvalidListTitle
 	}
-
 	if dto.BoardID == uuid.Nil {
 		return nil, entity.ErrInvalidBoardID
 	}
 
-	// Verify board exists
 	_, err := s.boardRepo.GetBoardByID(dto.BoardID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create list
+	// Auto-assign position
+	maxPos, err := s.listRepo.GetMaxPosition(ctx, dto.BoardID)
+	if err != nil {
+		return nil, err
+	}
+
 	list := &entity.List{
 		BoardID:  dto.BoardID,
 		Title:    dto.Title,
-		Position: dto.Position,
+		Position: maxPos + 1,
 	}
 
 	if err := s.listRepo.Create(ctx, list); err != nil {
 		return nil, err
 	}
-
 	return toListDTO(list), nil
 }
 
