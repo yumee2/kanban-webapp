@@ -3,43 +3,14 @@ package services
 import (
 	"context"
 	"student-kanban/internal/domain/entity"
-	"time"
 
 	"github.com/google/uuid"
 )
 
-type CreateCardDTO struct {
-	ListID      uuid.UUID
-	Title       string
-	Description *string
-	Priority    entity.CardPriority
-}
-
-type UpdateCardDTO struct {
-	ID          uuid.UUID
-	Title       *string
-	Description *string
-	Priority    *entity.CardPriority
-	Position    *float64
-	IsArchived  *bool
-}
-
-type CardDTO struct {
-	ID          uuid.UUID
-	ListID      uuid.UUID
-	Title       string
-	Description *string
-	Priority    entity.CardPriority
-	Position    float64
-	IsArchived  bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
 type CardRepository interface {
 	Create(ctx context.Context, card *entity.Card) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.Card, error)
-	GetAllByListID(ctx context.Context, listID uuid.UUID) ([]entity.Card, error)
+	GetAllByListID(ctx context.Context, listID uuid.UUID) ([]*entity.Card, error)
 	Update(ctx context.Context, card *entity.Card) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetMaxPosition(ctx context.Context, listID uuid.UUID) (float64, error)
@@ -61,38 +32,35 @@ func NewCardService(cardRepo CardRepository, listRepo listRepository) *cardServi
 	}
 }
 
-func (s *cardService) CreateCard(ctx context.Context, dto CreateCardDTO) (*CardDTO, error) {
-	if dto.Title == "" {
+func (s *cardService) CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, priority entity.CardPriority) (*entity.Card, error) {
+	if title == "" {
 		return nil, entity.ErrInvalidCardTitle
 	}
-	if dto.ListID == uuid.Nil {
+	if listID == uuid.Nil {
 		return nil, entity.ErrInvalidListID
 	}
 
-	// Set default priority if not provided
-	if dto.Priority == "" {
-		dto.Priority = entity.PriorityMedium
+	if priority == "" {
+		priority = entity.PriorityMedium
 	}
-	if !dto.Priority.IsValid() {
+	if !priority.IsValid() {
 		return nil, entity.ErrInvalidCardPriority
 	}
 
-	// Verify list exists
-	if _, err := s.listRepo.GetByID(ctx, dto.ListID); err != nil {
+	if _, err := s.listRepo.GetByID(ctx, listID); err != nil {
 		return nil, err
 	}
 
-	// Auto-assign position
-	maxPos, err := s.cardRepo.GetMaxPosition(ctx, dto.ListID)
+	maxPos, err := s.cardRepo.GetMaxPosition(ctx, listID)
 	if err != nil {
 		return nil, err
 	}
 
 	card := &entity.Card{
-		ListID:      dto.ListID,
-		Title:       dto.Title,
-		Description: dto.Description,
-		Priority:    dto.Priority,
+		ListID:      listID,
+		Title:       title,
+		Description: description,
+		Priority:    priority,
 		Position:    maxPos + 1,
 	}
 
@@ -100,95 +68,81 @@ func (s *cardService) CreateCard(ctx context.Context, dto CreateCardDTO) (*CardD
 		return nil, err
 	}
 
-	return toCardDTO(card), nil
+	return card, nil
 }
 
-func (s *cardService) GetCard(ctx context.Context, id uuid.UUID) (*CardDTO, error) {
+func (s *cardService) GetCardByID(ctx context.Context, id uuid.UUID) (*entity.Card, error) {
+	return s.cardRepo.GetByID(ctx, id)
+}
+
+func (s *cardService) GetCardsByListID(ctx context.Context, listID uuid.UUID) ([]*entity.Card, error) {
+	if listID == uuid.Nil {
+		return nil, entity.ErrInvalidListID
+	}
+	return s.cardRepo.GetAllByListID(ctx, listID)
+}
+
+func (s *cardService) UpdateCard(ctx context.Context, id uuid.UUID, title *string, description *string, priority *entity.CardPriority, position *float64, isArchived *bool) (*entity.Card, error) {
 	card, err := s.cardRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return toCardDTO(card), nil
-}
 
-func (s *cardService) GetCardsByList(ctx context.Context, listID uuid.UUID) ([]CardDTO, error) {
-	if listID == uuid.Nil {
-		return nil, entity.ErrInvalidListID
-	}
-
-	cards, err := s.cardRepo.GetAllByListID(ctx, listID)
-	if err != nil {
-		return nil, err
-	}
-
-	dtos := make([]CardDTO, len(cards))
-	for i, c := range cards {
-		dtos[i] = *toCardDTO(&c)
-	}
-	return dtos, nil
-}
-
-func (s *cardService) UpdateCard(ctx context.Context, dto UpdateCardDTO) (*CardDTO, error) {
-	if dto.ID == uuid.Nil {
-		return nil, entity.ErrCardNotFound
-	}
-
-	card, err := s.cardRepo.GetByID(ctx, dto.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Apply partial updates — only patch what was provided
-	if dto.Title != nil {
-		if *dto.Title == "" {
+	if title != nil {
+		if *title == "" {
 			return nil, entity.ErrInvalidCardTitle
 		}
-		card.Title = *dto.Title
+		card.Title = *title
 	}
-	if dto.Description != nil {
-		card.Description = dto.Description
+	if description != nil {
+		card.Description = description
 	}
-	if dto.Priority != nil {
-		if !dto.Priority.IsValid() {
+	if priority != nil {
+		if !priority.IsValid() {
 			return nil, entity.ErrInvalidCardPriority
 		}
-		card.Priority = *dto.Priority
+		card.Priority = *priority
 	}
-	if dto.Position != nil {
-		card.Position = *dto.Position
+	if position != nil {
+		card.Position = *position
 	}
-	if dto.IsArchived != nil {
-		card.IsArchived = *dto.IsArchived
+	if isArchived != nil {
+		card.IsArchived = *isArchived
 	}
 
 	if err := s.cardRepo.Update(ctx, card); err != nil {
 		return nil, err
 	}
 
-	return toCardDTO(card), nil
+	return card, nil
+}
+
+func (s *cardService) MoveCard(ctx context.Context, id uuid.UUID, position float64, listID *uuid.UUID) (*entity.Card, error) {
+	card, err := s.cardRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// If moving to a different list, verify the target list exists
+	if listID != nil && *listID != card.ListID {
+		if _, err := s.listRepo.GetByID(ctx, *listID); err != nil {
+			return nil, err
+		}
+		card.ListID = *listID
+	}
+
+	card.Position = position
+
+	if err := s.cardRepo.Update(ctx, card); err != nil {
+		return nil, err
+	}
+
+	return card, nil
 }
 
 func (s *cardService) DeleteCard(ctx context.Context, id uuid.UUID) error {
-	if id == uuid.Nil {
-		return entity.ErrCardNotFound
-	}
-	// Verify it exists before deleting
 	if _, err := s.cardRepo.GetByID(ctx, id); err != nil {
 		return err
 	}
 	return s.cardRepo.Delete(ctx, id)
-}
-
-func toCardDTO(c *entity.Card) *CardDTO {
-	return &CardDTO{
-		ID:          c.ID,
-		ListID:      c.ListID,
-		Title:       c.Title,
-		Description: c.Description,
-		Priority:    c.Priority,
-		Position:    c.Position,
-		IsArchived:  c.IsArchived,
-		CreatedAt:   c.CreatedAt,
-		UpdatedAt:   c.UpdatedAt,
-	}
 }
