@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	boardhttp "student-kanban/internal/adapters/http_server/boards"
+	cardshttp "student-kanban/internal/adapters/http_server/cards"
 	listshttp "student-kanban/internal/adapters/http_server/lists"
 	userhttp "student-kanban/internal/adapters/http_server/users"
 	storage "student-kanban/internal/adapters/postgres"
@@ -37,23 +38,29 @@ func main() {
 	listRepo := storage.NewListRepository(db)
 	listService := services.NewListService(listRepo, boardRepo)
 
-	r := setUpHttpServer(userService, boardService, listService)
+	cardRepo := storage.NewCardRepository(db)
+	cardService := services.NewCardService(cardRepo, listRepo)
+
+	r := setUpHttpServer(userService, boardService, listService, cardService)
 	if err := r.Run(cfg.Address); err != nil {
 		slog.Error("Failed to start server:", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 	}
 
 }
 
-func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService, listService listshttp.ListService) *gin.Engine {
+func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService,
+	listService listshttp.ListService, cardService cardshttp.CardService) *gin.Engine {
 	r := gin.Default()
 
 	authController := userhttp.NewAuthController(userService)
 	boardController := boardhttp.NewBoardController(boardService)
 	listController := listshttp.NewListController(listService)
+	cardController := cardshttp.NewCardController(cardService)
 
 	userhttp.SetupAuthRoutes(r, authController)
 	boardhttp.SetupBoardRoutes(r, boardController)
 	listshttp.SetupListRoutes(r, listController)
+	cardshttp.SetupCardRoutes(r, cardController)
 	return r
 }
 

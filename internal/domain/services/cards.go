@@ -17,7 +17,7 @@ type CardRepository interface {
 }
 
 type listRepository interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*entity.List, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*entity.List, error)
 }
 
 type cardService struct {

@@ -35,8 +35,8 @@ func (r *cardRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Car
 	return &c, nil
 }
 
-func (r *cardRepository) GetAllByListID(ctx context.Context, listID uuid.UUID) ([]entity.Card, error) {
-	var cards []entity.Card
+func (r *cardRepository) GetAllByListID(ctx context.Context, listID uuid.UUID) ([]*entity.Card, error) {
+	var cards []*entity.Card
 	err := r.db.WithContext(ctx).
 		Where("list_id = ?", listID).
 		Order("position ASC").
