@@ -35,3 +35,11 @@ var (
 	ErrInvalidListID       = errors.New("invalid list ID")
 	ErrInvalidCardPriority = errors.New("invalid card priority")
 )
+
+// Tags related errors
+var (
+	ErrTagNotFound        = errors.New("tag not found")
+	ErrInvalidTagName     = errors.New("tag name cannot be empty")
+	ErrInvalidTagColor    = errors.New("tag color cannot be empty")
+	ErrTagAlreadyAttached = errors.New("tag already attached to card")
+)
