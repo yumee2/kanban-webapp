@@ -52,8 +52,6 @@ func (r *tagRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		Delete(&entity.Tag{}, "id = ?", id).Error
 }
 
-// ── Card-Tag association ──────────────────────────────────────────────────────
-
 func (r *tagRepository) AttachToCard(ctx context.Context, cardID uuid.UUID, tagID uuid.UUID) error {
 	card := &entity.Card{}
 	card.ID = cardID
