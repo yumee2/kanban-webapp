@@ -19,6 +19,16 @@ type ListService interface {
 	UpdateListPosition(ctx context.Context, id uuid.UUID, position float64) error
 }
 
+type cardResponse struct {
+	ID          string              `json:"id"`
+	ListID      string              `json:"list_id"`
+	Title       string              `json:"title"`
+	Description *string             `json:"description"`
+	Priority    entity.CardPriority `json:"priority"`
+	Position    float64             `json:"position"`
+	IsArchived  bool                `json:"is_archived"`
+}
+
 type ListHandler struct {
 	listService ListService
 }
@@ -87,7 +97,13 @@ func (h *ListHandler) GetListsByBoard(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, lists)
+	listResponses := make([]listResponse, len(lists))
+
+	for _, list := range lists {
+		listResponses = append(listResponses, toListResponse(list))
+	}
+
+	c.JSON(http.StatusOK, listResponses)
 }
 
 func (h *ListHandler) UpdateList(c *gin.Context) {
@@ -117,7 +133,7 @@ func (h *ListHandler) UpdateList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, list)
+	c.JSON(http.StatusOK, toListResponse(list))
 }
 
 func (h *ListHandler) DeleteList(c *gin.Context) {
@@ -166,4 +182,35 @@ func (h *ListHandler) UpdatePosition(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "position updated successfully"})
+}
+
+type listResponse struct {
+	ID       string         `json:"id"`
+	BoardID  string         `json:"board_id"`
+	Title    string         `json:"title"`
+	Position float64        `json:"position"`
+	Cards    []cardResponse `json:"cards"`
+}
+
+func toListResponse(list *services.ListDTO) listResponse {
+	cards := make([]cardResponse, len(list.Cards))
+	for i, card := range list.Cards {
+		cards[i] = cardResponse{
+			ID:          card.ID.String(),
+			ListID:      card.ListID.String(),
+			Title:       card.Title,
+			Description: card.Description,
+			Priority:    card.Priority,
+			Position:    card.Position,
+			IsArchived:  card.IsArchived,
+		}
+	}
+
+	return listResponse{
+		ID:       list.ID.String(),
+		BoardID:  list.BoardID.String(),
+		Title:    list.Title,
+		Position: list.Position,
+		Cards:    cards,
+	}
 }

@@ -47,7 +47,7 @@ func (s *cardService) CreateCard(ctx context.Context, listID uuid.UUID, title st
 		return nil, entity.ErrInvalidCardPriority
 	}
 
-	if _, err := s.listRepo.GetByID(ctx, listID); err != nil {
+	if _, err := s.listRepo.FindByID(ctx, listID); err != nil {
 		return nil, err
 	}
 
@@ -125,7 +125,7 @@ func (s *cardService) MoveCard(ctx context.Context, id uuid.UUID, position float
 
 	// If moving to a different list, verify the target list exists
 	if listID != nil && *listID != card.ListID {
-		if _, err := s.listRepo.GetByID(ctx, *listID); err != nil {
+		if _, err := s.listRepo.FindByID(ctx, *listID); err != nil {
 			return nil, err
 		}
 		card.ListID = *listID

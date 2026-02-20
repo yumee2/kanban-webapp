@@ -26,7 +26,7 @@ type moveCardRequest struct {
 	ListID   *uuid.UUID `json:"list_id"`
 }
 
-type cardResponse struct {
+type CardResponse struct {
 	ID          string              `json:"id"`
 	ListID      string              `json:"list_id"`
 	Title       string              `json:"title"`

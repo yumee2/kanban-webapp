@@ -57,7 +57,7 @@ func (c *cardController) CreateCard(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, toCardResponse(card))
+	ctx.JSON(http.StatusCreated, ToCardResponse(card))
 }
 
 // GetCard retrieves a card by ID
@@ -83,7 +83,7 @@ func (c *cardController) GetCard(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, toCardResponse(card))
+	ctx.JSON(http.StatusOK, ToCardResponse(card))
 }
 
 // GetCardsByList retrieves all cards for a given list
@@ -105,9 +105,9 @@ func (c *cardController) GetCardsByList(ctx *gin.Context) {
 		return
 	}
 
-	response := make([]cardResponse, len(cards))
+	response := make([]CardResponse, len(cards))
 	for i, card := range cards {
-		response[i] = toCardResponse(card)
+		response[i] = ToCardResponse(card)
 	}
 
 	ctx.JSON(http.StatusOK, response)
@@ -152,7 +152,7 @@ func (c *cardController) UpdateCard(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, toCardResponse(card))
+	ctx.JSON(http.StatusOK, ToCardResponse(card))
 }
 
 // DeleteCard deletes a card by ID
@@ -215,11 +215,11 @@ func (c *cardController) MoveCard(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, toCardResponse(card))
+	ctx.JSON(http.StatusOK, ToCardResponse(card))
 }
 
-func toCardResponse(card *entity.Card) cardResponse {
-	return cardResponse{
+func ToCardResponse(card *entity.Card) CardResponse {
+	return CardResponse{
 		ID:          card.ID.String(),
 		ListID:      card.ListID.String(),
 		Title:       card.Title,

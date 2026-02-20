@@ -30,6 +30,7 @@ func (r *listRepository) FindByID(ctx context.Context, id uuid.UUID) (*entity.Li
 	var list entity.List
 	if err := r.db.WithContext(ctx).
 		Where("id = ?", id).
+		Preload("Cards").
 		First(&list).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, entity.ErrListNotFound

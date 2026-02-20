@@ -36,6 +36,17 @@ type ListDTO struct {
 	Position  float64   `json:"position"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Cards     []CardDTO `json:"cards"`
+}
+
+type CardDTO struct {
+	ID          uuid.UUID           `json:"id"`
+	ListID      uuid.UUID           `json:"list_id"`
+	Title       string              `json:"title"`
+	Description *string             `json:"description"`
+	Priority    entity.CardPriority `json:"priority"`
+	Position    float64             `json:"position"`
+	IsArchived  bool                `json:"is_archived"`
 }
 
 type listService struct {
@@ -146,6 +157,19 @@ func (s *listService) UpdateListPosition(ctx context.Context, id uuid.UUID, posi
 
 // Helper function to convert List model to DTO
 func toListDTO(list *entity.List) *ListDTO {
+	cards := make([]CardDTO, len(list.Cards))
+	for i, c := range list.Cards {
+		cards[i] = CardDTO{
+			ID:          c.ID,
+			ListID:      c.ListID,
+			Title:       c.Title,
+			Description: c.Description,
+			Priority:    c.Priority,
+			Position:    c.Position,
+			IsArchived:  c.IsArchived,
+		}
+	}
+
 	return &ListDTO{
 		ID:        list.ID,
 		BoardID:   list.BoardID,
@@ -153,5 +177,6 @@ func toListDTO(list *entity.List) *ListDTO {
 		Position:  list.Position,
 		CreatedAt: list.CreatedAt,
 		UpdatedAt: list.UpdatedAt,
+		Cards:     cards,
 	}
 }
