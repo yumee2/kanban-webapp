@@ -21,6 +21,8 @@ type Card struct {
 
 	Priority CardPriority `gorm:"type:text;default:'medium'"`
 
+	Tags []Tag `gorm:"many2many:card_tags;"`
+
 	Position   float64 `gorm:"not null"`
 	IsArchived bool    `gorm:"default:false"`
 }
