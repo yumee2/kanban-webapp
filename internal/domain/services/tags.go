@@ -19,7 +19,7 @@ type TagRepository interface {
 }
 
 type boardRepository interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*entity.Board, error)
+	GetBoardByID(id uuid.UUID) (*entity.Board, error)
 }
 
 type cardRepository interface {
@@ -48,7 +48,7 @@ func (s *tagService) CreateTag(ctx context.Context, boardID uuid.UUID, name, col
 		return nil, entity.ErrInvalidTagColor
 	}
 
-	if _, err := s.boardRepo.GetByID(ctx, boardID); err != nil {
+	if _, err := s.boardRepo.GetBoardByID(boardID); err != nil {
 		return nil, err
 	}
 

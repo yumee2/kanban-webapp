@@ -12,4 +12,5 @@ type Board struct {
 	Description *string `gorm:"type:varchar(500)"`
 
 	Lists []List `gorm:"foreignKey:BoardID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Tags  []Tag  `gorm:"foreignKey:BoardID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

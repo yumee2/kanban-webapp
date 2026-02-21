@@ -46,7 +46,7 @@ func (s *boardStorage) GetBoardByID(id uuid.UUID) (*entity.Board, error) {
 	const fn = "adapters.repository.GetBoardByID"
 
 	var board entity.Board
-	result := s.db.Preload("Owner").Preload("Lists").Where("id = ?", id).First(&board)
+	result := s.db.Preload("Owner").Preload("Tags").Preload("Lists").Where("id = ?", id).First(&board)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
