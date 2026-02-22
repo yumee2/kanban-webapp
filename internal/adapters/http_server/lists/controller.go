@@ -39,6 +39,19 @@ func NewListController(listService ListService) *ListHandler {
 	}
 }
 
+// CreateList godoc
+// @Summary      Create a new list
+// @Description  Creates a new list inside a board
+// @Tags         lists
+// @Accept       json
+// @Produce      json
+// @Param        body  body      services.CreateListDTO  true  "List data"
+// @Success      201   {object}  services.ListDTO
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /lists [post]
 func (h *ListHandler) CreateList(c *gin.Context) {
 	var dto services.CreateListDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
@@ -62,6 +75,18 @@ func (h *ListHandler) CreateList(c *gin.Context) {
 	c.JSON(http.StatusCreated, list)
 }
 
+// GetList godoc
+// @Summary      Get a list by ID
+// @Description  Returns a single list with its cards
+// @Tags         lists
+// @Produce      json
+// @Param        id   path      string  true  "List UUID"
+// @Success      200  {object}  listResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /lists/{id} [get]
 func (h *ListHandler) GetList(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -83,6 +108,17 @@ func (h *ListHandler) GetList(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
+// GetListsByBoard godoc
+// @Summary      Get all lists for a board
+// @Description  Returns all lists belonging to a given board, each with their cards
+// @Tags         lists
+// @Produce      json
+// @Param        id   path      string  true  "Board UUID"
+// @Success      200  {array}   listResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards/{id}/lists [get]
 func (h *ListHandler) GetListsByBoard(c *gin.Context) {
 	idStr := c.Param("id")
 	boardID, err := uuid.Parse(idStr)
@@ -106,6 +142,20 @@ func (h *ListHandler) GetListsByBoard(c *gin.Context) {
 	c.JSON(http.StatusOK, listResponses)
 }
 
+// UpdateList godoc
+// @Summary      Update a list
+// @Description  Updates a list's title and/or position
+// @Tags         lists
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                  true  "List UUID"
+// @Param        body  body      services.UpdateListDTO  true  "Fields to update"
+// @Success      200   {object}  listResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /lists/{id} [put]
 func (h *ListHandler) UpdateList(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -136,6 +186,18 @@ func (h *ListHandler) UpdateList(c *gin.Context) {
 	c.JSON(http.StatusOK, toListResponse(list))
 }
 
+// DeleteList godoc
+// @Summary      Delete a list
+// @Description  Deletes a list and all its cards by UUID
+// @Tags         lists
+// @Produce      json
+// @Param        id   path      string  true  "List UUID"
+// @Success      204
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /lists/{id} [delete]
 func (h *ListHandler) DeleteList(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -156,6 +218,20 @@ func (h *ListHandler) DeleteList(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// UpdatePosition godoc
+// @Summary      Update list position
+// @Description  Updates the position of a list within its board
+// @Tags         lists
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string  true  "List UUID"
+// @Param        body  body      object  true  "Position data"  example({"position": 1.5})
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /lists/{id}/position [patch]
 func (h *ListHandler) UpdatePosition(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)

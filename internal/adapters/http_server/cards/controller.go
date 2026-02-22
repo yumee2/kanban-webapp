@@ -30,7 +30,19 @@ func NewCardController(cardService CardService) *cardController {
 	}
 }
 
-// CreateCard creates a new card inside a list
+// CreateCard godoc
+// @Summary      Create a new card
+// @Description  Creates a new card inside a list
+// @Tags         cards
+// @Accept       json
+// @Produce      json
+// @Param        body  body      createCardRequest  true  "Card data"
+// @Success      201   {object}  CardResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards [post]
 func (c *cardController) CreateCard(ctx *gin.Context) {
 	const fn = "adapters.controller.CreateCard"
 	log := slog.With(slog.String("fn", fn))
@@ -60,7 +72,18 @@ func (c *cardController) CreateCard(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, ToCardResponse(card))
 }
 
-// GetCard retrieves a card by ID
+// GetCard godoc
+// @Summary      Get a card by ID
+// @Description  Returns a single card by its UUID
+// @Tags         cards
+// @Produce      json
+// @Param        id   path      string  true  "Card UUID"
+// @Success      200  {object}  CardResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id} [get]
 func (c *cardController) GetCard(ctx *gin.Context) {
 	const fn = "adapters.controller.GetCard"
 	log := slog.With(slog.String("fn", fn))
@@ -86,7 +109,17 @@ func (c *cardController) GetCard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ToCardResponse(card))
 }
 
-// GetCardsByList retrieves all cards for a given list
+// GetCardsByList godoc
+// @Summary      Get all cards for a list
+// @Description  Returns all cards belonging to a given list
+// @Tags         cards
+// @Produce      json
+// @Param        list_id  query     string  true  "List UUID"
+// @Success      200      {array}   CardResponse
+// @Failure      400      {object}  map[string]string
+// @Failure      500      {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards [get]
 func (c *cardController) GetCardsByList(ctx *gin.Context) {
 	const fn = "adapters.controller.GetCardsByList"
 	log := slog.With(slog.String("fn", fn))
@@ -113,7 +146,20 @@ func (c *cardController) GetCardsByList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// UpdateCard updates a card's fields
+// UpdateCard godoc
+// @Summary      Update a card
+// @Description  Updates a card's fields. At least one field must be provided
+// @Tags         cards
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string            true  "Card UUID"
+// @Param        body  body      updateCardRequest  true  "Fields to update"
+// @Success      200   {object}  CardResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id} [put]
 func (c *cardController) UpdateCard(ctx *gin.Context) {
 	const fn = "adapters.controller.UpdateCard"
 	log := slog.With(slog.String("fn", fn))
@@ -155,7 +201,18 @@ func (c *cardController) UpdateCard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ToCardResponse(card))
 }
 
-// DeleteCard deletes a card by ID
+// DeleteCard godoc
+// @Summary      Delete a card
+// @Description  Deletes a card by its UUID
+// @Tags         cards
+// @Produce      json
+// @Param        id   path      string  true  "Card UUID"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id} [delete]
 func (c *cardController) DeleteCard(ctx *gin.Context) {
 	const fn = "adapters.controller.DeleteCard"
 	log := slog.With(slog.String("fn", fn))
@@ -181,7 +238,20 @@ func (c *cardController) DeleteCard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Card deleted successfully"})
 }
 
-// MoveCard updates a card's position, optionally moving it to a different list
+// MoveCard godoc
+// @Summary      Move a card
+// @Description  Updates a card's position, optionally moving it to a different list
+// @Tags         cards
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string          true  "Card UUID"
+// @Param        body  body      moveCardRequest  true  "Move data"
+// @Success      200   {object}  CardResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id}/move [patch]
 func (c *cardController) MoveCard(ctx *gin.Context) {
 	const fn = "adapters.controller.MoveCard"
 	log := slog.With(slog.String("fn", fn))

@@ -30,6 +30,19 @@ func NewTagController(tagService TagService) *tagController {
 	return &tagController{tagService: tagService}
 }
 
+// CreateTag godoc
+// @Summary      Create a new tag
+// @Description  Creates a new tag for a board
+// @Tags         tags
+// @Accept       json
+// @Produce      json
+// @Param        body  body      createTagRequest  true  "Tag data"
+// @Success      201   {object}  tagResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /tags [post]
 func (c *tagController) CreateTag(ctx *gin.Context) {
 	const fn = "adapters.controller.CreateTag"
 	log := slog.With(slog.String("fn", fn))
@@ -59,6 +72,18 @@ func (c *tagController) CreateTag(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, toTagResponse(tag))
 }
 
+// GetTag godoc
+// @Summary      Get a tag by ID
+// @Description  Returns a single tag by its UUID
+// @Tags         tags
+// @Produce      json
+// @Param        id   path      string  true  "Tag UUID"
+// @Success      200  {object}  tagResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /tags/{id} [get]
 func (c *tagController) GetTag(ctx *gin.Context) {
 	const fn = "adapters.controller.GetTag"
 	log := slog.With(slog.String("fn", fn))
@@ -83,6 +108,18 @@ func (c *tagController) GetTag(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, toTagResponse(tag))
 }
+
+// GetTagsByBoard godoc
+// @Summary      Get all tags for a board
+// @Description  Returns all tags belonging to a given board
+// @Tags         tags
+// @Produce      json
+// @Param        id   path      string  true  "Board UUID"
+// @Success      200  {array}   tagResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards/{id}/tags [get]
 
 func (c *tagController) GetTagsByBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.GetTagsByBoard"
@@ -110,6 +147,20 @@ func (c *tagController) GetTagsByBoard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// UpdateTag godoc
+// @Summary      Update a tag
+// @Description  Updates a tag's name and/or color. At least one field must be provided
+// @Tags         tags
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string            true  "Tag UUID"
+// @Param        body  body      updateTagRequest  true  "Fields to update"
+// @Success      200   {object}  tagResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /tags/{id} [put]
 func (c *tagController) UpdateTag(ctx *gin.Context) {
 	const fn = "adapters.controller.UpdateTag"
 	log := slog.With(slog.String("fn", fn))
@@ -151,6 +202,18 @@ func (c *tagController) UpdateTag(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, toTagResponse(tag))
 }
 
+// DeleteTag godoc
+// @Summary      Delete a tag
+// @Description  Deletes a tag by its UUID
+// @Tags         tags
+// @Produce      json
+// @Param        id   path      string  true  "Tag UUID"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /tags/{id} [delete]
 func (c *tagController) DeleteTag(ctx *gin.Context) {
 	const fn = "adapters.controller.DeleteTag"
 	log := slog.With(slog.String("fn", fn))
@@ -175,6 +238,20 @@ func (c *tagController) DeleteTag(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Tag deleted successfully"})
 }
 
+// AttachTag godoc
+// @Summary      Attach a tag to a card
+// @Description  Attaches an existing tag to a card
+// @Tags         tags
+// @Produce      json
+// @Param        id      path      string  true  "Card UUID"
+// @Param        tag_id  path      string  true  "Tag UUID"
+// @Success      200     {object}  map[string]string
+// @Failure      400     {object}  map[string]string
+// @Failure      404     {object}  map[string]string
+// @Failure      409     {object}  map[string]string
+// @Failure      500     {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id}/tags/{tag_id} [post]
 func (c *tagController) AttachTag(ctx *gin.Context) {
 	const fn = "adapters.controller.AttachTag"
 	log := slog.With(slog.String("fn", fn))
@@ -214,6 +291,19 @@ func (c *tagController) AttachTag(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Tag attached successfully"})
 }
 
+// DetachTag godoc
+// @Summary      Detach a tag from a card
+// @Description  Removes a tag from a card
+// @Tags         tags
+// @Produce      json
+// @Param        id      path      string  true  "Card UUID"
+// @Param        tag_id  path      string  true  "Tag UUID"
+// @Success      200     {object}  map[string]string
+// @Failure      400     {object}  map[string]string
+// @Failure      404     {object}  map[string]string
+// @Failure      500     {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id}/tags/{tag_id} [delete]
 func (c *tagController) DetachTag(ctx *gin.Context) {
 	const fn = "adapters.controller.DetachTag"
 	log := slog.With(slog.String("fn", fn))
@@ -249,6 +339,18 @@ func (c *tagController) DetachTag(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Tag detached successfully"})
 }
 
+// GetCardTags godoc
+// @Summary      Get all tags for a card
+// @Description  Returns all tags attached to a given card
+// @Tags         tags
+// @Produce      json
+// @Param        id   path      string  true  "Card UUID"
+// @Success      200  {array}   tagResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /cards/{id}/tags [get]
 func (c *tagController) GetCardTags(ctx *gin.Context) {
 	const fn = "adapters.controller.GetCardTags"
 	log := slog.With(slog.String("fn", fn))

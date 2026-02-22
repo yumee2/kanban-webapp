@@ -30,6 +30,19 @@ func NewBoardController(boardService BoardService) *boardController {
 	}
 }
 
+// CreateBoard godoc
+// @Summary      Create a new board
+// @Description  Creates a new board for the authenticated user
+// @Tags         boards
+// @Accept       json
+// @Produce      json
+// @Param        body  body      createBoardRequest   true  "Board data"
+// @Success      201   {object}  createBoardResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards [post]
 // CreateBoard creates a new board for the authenticated user
 func (c *boardController) CreateBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.CreateBoard"
@@ -69,7 +82,18 @@ func (c *boardController) CreateBoard(ctx *gin.Context) {
 	})
 }
 
-// GetBoard retrieves a board by ID
+// GetBoard godoc
+// @Summary      Get a board by ID
+// @Description  Returns a single board by its UUID
+// @Tags         boards
+// @Produce      json
+// @Param        id   path      string  true  "Board UUID"
+// @Success      200  {object}  boardResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards/{id} [get]
 func (c *boardController) GetBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.GetBoard"
 	log := slog.With(slog.String("fn", fn))
@@ -96,7 +120,16 @@ func (c *boardController) GetBoard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, toBoardResponse(board))
 }
 
-// GetUserBoards retrieves all boards for the authenticated user
+// GetUserBoards godoc
+// @Summary      Get all boards for the authenticated user
+// @Description  Returns a list of all boards owned by the authenticated user
+// @Tags         boards
+// @Produce      json
+// @Success      200  {array}   boardResponse
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards [get]
 func (c *boardController) GetUserBoards(ctx *gin.Context) {
 	const fn = "adapters.controller.GetUserBoards"
 	log := slog.With(slog.String("fn", fn))
@@ -131,7 +164,20 @@ func (c *boardController) GetUserBoards(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// UpdateBoard updates a board's title and/or description
+// UpdateBoard godoc
+// @Summary      Update a board
+// @Description  Updates a board's title and/or description. At least one field must be provided
+// @Tags         boards
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string             true  "Board UUID"
+// @Param        body  body      updateBoardRequest  true  "Fields to update"
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards/{id} [put]
 func (c *boardController) UpdateBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.UpdateBoard"
 	log := slog.With(slog.String("fn", fn))
@@ -171,7 +217,18 @@ func (c *boardController) UpdateBoard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Board updated successfully"})
 }
 
-// DeleteBoard deletes a board by ID
+// DeleteBoard godoc
+// @Summary      Delete a board
+// @Description  Deletes a board by its UUID
+// @Tags         boards
+// @Produce      json
+// @Param        id   path      string  true  "Board UUID"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /boards/{id} [delete]
 func (c *boardController) DeleteBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.DeleteBoard"
 	log := slog.With(slog.String("fn", fn))

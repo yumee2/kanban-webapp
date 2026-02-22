@@ -29,6 +29,18 @@ type JWTTokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// Register godoc
+// @Summary      Register a new user
+// @Description  Creates a new user account and returns a JWT token pair
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      registerRequest   true  "Registration data"
+// @Success      201   {object}  JWTTokenResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      409   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /auth/register [post]
 func (c *authController) Register(ctx *gin.Context) {
 	const fn = "adapters.controller.Register"
 	log := slog.With(
@@ -58,6 +70,18 @@ func (c *authController) Register(ctx *gin.Context) {
 	})
 }
 
+// Login godoc
+// @Summary      Login user
+// @Description  Authenticates a user and returns a JWT token pair
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      loginRequest      true  "Login credentials"
+// @Success      201   {object}  JWTTokenResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /auth/login [post]
 func (c *authController) Login(ctx *gin.Context) {
 	const fn = "adapters.controller.Login"
 	log := slog.With(
@@ -92,6 +116,18 @@ func (c *authController) Login(ctx *gin.Context) {
 	})
 }
 
+// Refresh godoc
+// @Summary      Refresh access token
+// @Description  Validates a refresh token and returns a new access token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      refreshRequest    true  "Refresh token"
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /auth/refresh [post]
 func (c *authController) Refresh(ctx *gin.Context) {
 	const fn = "adapters.controller.Refresh"
 	log := slog.With(

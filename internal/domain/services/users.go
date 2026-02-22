@@ -161,8 +161,8 @@ func hashPassword(password string) (string, error) {
 func generateJWTTokenPair(userUUID string) (*JWTTokenPair, error) {
 	var (
 		jwtSecret  = os.Getenv("JWT_SECRET")
-		accessTTL  = 15 * time.Minute
-		refreshTTL = 7 * 24 * time.Hour
+		accessTTL  = 60 * time.Minute
+		refreshTTL = 14 * 24 * time.Hour
 	)
 
 	accessExpire := time.Now().Add(accessTTL)

@@ -1,0 +1,1392 @@
+basePath: /api
+definitions:
+  boardhttp.boardResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      owner_id:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  boardhttp.createBoardRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  boardhttp.createBoardResponse:
+    properties:
+      id:
+        type: string
+    type: object
+  boardhttp.updateBoardRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  cardshttp.CardResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      is_archived:
+        type: boolean
+      list_id:
+        type: string
+      position:
+        type: number
+      priority:
+        $ref: '#/definitions/entity.CardPriority'
+      title:
+        type: string
+    type: object
+  cardshttp.createCardRequest:
+    properties:
+      description:
+        type: string
+      list_id:
+        type: string
+      priority:
+        $ref: '#/definitions/entity.CardPriority'
+      title:
+        type: string
+    required:
+    - list_id
+    - title
+    type: object
+  cardshttp.moveCardRequest:
+    properties:
+      list_id:
+        type: string
+      position:
+        type: number
+    required:
+    - position
+    type: object
+  cardshttp.updateCardRequest:
+    properties:
+      description:
+        type: string
+      is_archived:
+        type: boolean
+      position:
+        type: number
+      priority:
+        $ref: '#/definitions/entity.CardPriority'
+      title:
+        type: string
+    type: object
+  entity.CardPriority:
+    enum:
+    - low
+    - medium
+    - high
+    type: string
+    x-enum-varnames:
+    - PriorityLow
+    - PriorityMedium
+    - PriorityHigh
+  listshttp.cardResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      is_archived:
+        type: boolean
+      list_id:
+        type: string
+      position:
+        type: number
+      priority:
+        $ref: '#/definitions/entity.CardPriority'
+      title:
+        type: string
+    type: object
+  listshttp.listResponse:
+    properties:
+      board_id:
+        type: string
+      cards:
+        items:
+          $ref: '#/definitions/listshttp.cardResponse'
+        type: array
+      id:
+        type: string
+      position:
+        type: number
+      title:
+        type: string
+    type: object
+  services.CardDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      is_archived:
+        type: boolean
+      list_id:
+        type: string
+      position:
+        type: number
+      priority:
+        $ref: '#/definitions/entity.CardPriority'
+      title:
+        type: string
+    type: object
+  services.CreateListDTO:
+    properties:
+      board_id:
+        type: string
+      position:
+        type: number
+      title:
+        type: string
+    required:
+    - board_id
+    - title
+    type: object
+  services.ListDTO:
+    properties:
+      board_id:
+        type: string
+      cards:
+        items:
+          $ref: '#/definitions/services.CardDTO'
+        type: array
+      created_at:
+        type: string
+      id:
+        type: string
+      position:
+        type: number
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  services.UpdateListDTO:
+    properties:
+      position:
+        type: number
+      title:
+        type: string
+    type: object
+  tagshttp.createTagRequest:
+    properties:
+      board_id:
+        type: string
+      color:
+        type: string
+      name:
+        type: string
+    required:
+    - board_id
+    - color
+    - name
+    type: object
+  tagshttp.tagResponse:
+    properties:
+      board_id:
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  tagshttp.updateTagRequest:
+    properties:
+      color:
+        type: string
+      name:
+        type: string
+    type: object
+  userhttp.JWTTokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  userhttp.loginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  userhttp.refreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  userhttp.registerRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+host: localhost:8003
+info:
+  contact: {}
+  description: API for managing kanban boards
+  title: Student Kanban API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns a JWT token pair
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/userhttp.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/userhttp.JWTTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Validates a refresh token and returns a new access token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/userhttp.refreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and returns a JWT token pair
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/userhttp.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/userhttp.JWTTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - auth
+  /boards:
+    get:
+      description: Returns a list of all boards owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/boardhttp.boardResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all boards for the authenticated user
+      tags:
+      - boards
+    post:
+      consumes:
+      - application/json
+      description: Creates a new board for the authenticated user
+      parameters:
+      - description: Board data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/boardhttp.createBoardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/boardhttp.createBoardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new board
+      tags:
+      - boards
+  /boards/{id}:
+    delete:
+      description: Deletes a board by its UUID
+      parameters:
+      - description: Board UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a board
+      tags:
+      - boards
+    get:
+      description: Returns a single board by its UUID
+      parameters:
+      - description: Board UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/boardhttp.boardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a board by ID
+      tags:
+      - boards
+    put:
+      consumes:
+      - application/json
+      description: Updates a board's title and/or description. At least one field
+        must be provided
+      parameters:
+      - description: Board UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/boardhttp.updateBoardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a board
+      tags:
+      - boards
+  /boards/{id}/lists:
+    get:
+      description: Returns all lists belonging to a given board, each with their cards
+      parameters:
+      - description: Board UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/listshttp.listResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all lists for a board
+      tags:
+      - lists
+  /cards:
+    get:
+      description: Returns all cards belonging to a given list
+      parameters:
+      - description: List UUID
+        in: query
+        name: list_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/cardshttp.CardResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all cards for a list
+      tags:
+      - cards
+    post:
+      consumes:
+      - application/json
+      description: Creates a new card inside a list
+      parameters:
+      - description: Card data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/cardshttp.createCardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/cardshttp.CardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new card
+      tags:
+      - cards
+  /cards/{id}:
+    delete:
+      description: Deletes a card by its UUID
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a card
+      tags:
+      - cards
+    get:
+      description: Returns a single card by its UUID
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cardshttp.CardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a card by ID
+      tags:
+      - cards
+    put:
+      consumes:
+      - application/json
+      description: Updates a card's fields. At least one field must be provided
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/cardshttp.updateCardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cardshttp.CardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a card
+      tags:
+      - cards
+  /cards/{id}/move:
+    patch:
+      consumes:
+      - application/json
+      description: Updates a card's position, optionally moving it to a different
+        list
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Move data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/cardshttp.moveCardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cardshttp.CardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Move a card
+      tags:
+      - cards
+  /cards/{id}/tags:
+    get:
+      description: Returns all tags attached to a given card
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/tagshttp.tagResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all tags for a card
+      tags:
+      - tags
+  /cards/{id}/tags/{tag_id}:
+    delete:
+      description: Removes a tag from a card
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag UUID
+        in: path
+        name: tag_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Detach a tag from a card
+      tags:
+      - tags
+    post:
+      description: Attaches an existing tag to a card
+      parameters:
+      - description: Card UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag UUID
+        in: path
+        name: tag_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Attach a tag to a card
+      tags:
+      - tags
+  /lists:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new list inside a board
+      parameters:
+      - description: List data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateListDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/services.ListDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new list
+      tags:
+      - lists
+  /lists/{id}:
+    delete:
+      description: Deletes a list and all its cards by UUID
+      parameters:
+      - description: List UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a list
+      tags:
+      - lists
+    get:
+      description: Returns a single list with its cards
+      parameters:
+      - description: List UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/listshttp.listResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a list by ID
+      tags:
+      - lists
+    put:
+      consumes:
+      - application/json
+      description: Updates a list's title and/or position
+      parameters:
+      - description: List UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/services.UpdateListDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/listshttp.listResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a list
+      tags:
+      - lists
+  /lists/{id}/position:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the position of a list within its board
+      parameters:
+      - description: List UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Position data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update list position
+      tags:
+      - lists
+  /tags:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new tag for a board
+      parameters:
+      - description: Tag data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/tagshttp.createTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/tagshttp.tagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new tag
+      tags:
+      - tags
+  /tags/{id}:
+    delete:
+      description: Deletes a tag by its UUID
+      parameters:
+      - description: Tag UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a tag
+      tags:
+      - tags
+    get:
+      description: Returns a single tag by its UUID
+      parameters:
+      - description: Tag UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tagshttp.tagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a tag by ID
+      tags:
+      - tags
+    put:
+      consumes:
+      - application/json
+      description: Updates a tag's name and/or color. At least one field must be provided
+      parameters:
+      - description: Tag UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/tagshttp.updateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tagshttp.tagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a tag
+      tags:
+      - tags
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -14,12 +14,26 @@ import (
 	"student-kanban/internal/domain/entity"
 	"student-kanban/internal/domain/services"
 
+	_ "student-kanban/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
+
+// @title           Student Kanban API
+// @version         1.0
+// @description     API for managing kanban boards
+// @host            localhost:8003
+// @BasePath        /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main() {
 	LoadEnv()
@@ -67,6 +81,8 @@ func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.Bo
 	listshttp.SetupListRoutes(r, listController)
 	cardshttp.SetupCardRoutes(r, cardController)
 	tagshttp.SetupTagRoutes(r, tagController)
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return r
 }
