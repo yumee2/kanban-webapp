@@ -24,6 +24,7 @@ func (r *cardRepository) Create(ctx context.Context, c *entity.Card) error {
 func (r *cardRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Card, error) {
 	var c entity.Card
 	err := r.db.WithContext(ctx).
+		Preload("Tags").
 		Where("id = ? AND is_archived = false", id).
 		First(&c).Error
 	if err != nil {
@@ -38,6 +39,7 @@ func (r *cardRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.Car
 func (r *cardRepository) GetAllByListID(ctx context.Context, listID uuid.UUID) ([]*entity.Card, error) {
 	var cards []*entity.Card
 	err := r.db.WithContext(ctx).
+		Preload("Tags").
 		Where("list_id = ?", listID).
 		Order("position ASC").
 		Find(&cards).Error

@@ -10,9 +10,12 @@ import (
 type BoardRepository interface {
 	CreateBoard(board *entity.Board) (string, error)
 	GetBoardByID(id uuid.UUID) (*entity.Board, error)
+	GetBoardByIDForOwner(id uuid.UUID, ownerID uuid.UUID) (*entity.Board, error)
 	GetBoardsByOwnerID(ownerID uuid.UUID) ([]*entity.Board, error)
 	UpdateBoardFields(id uuid.UUID, updates map[string]interface{}) error
+	UpdateBoardFieldsForOwner(id uuid.UUID, ownerID uuid.UUID, updates map[string]interface{}) error
 	DeleteBoard(id uuid.UUID) error
+	DeleteBoardForOwner(id uuid.UUID, ownerID uuid.UUID) error
 }
 
 type boardService struct {
@@ -69,6 +72,26 @@ func (s *boardService) GetBoardByID(id uuid.UUID) (*entity.Board, error) {
 	return board, nil
 }
 
+// GetBoardByIDForOwner retrieves a board by its ID for a specific owner.
+func (s *boardService) GetBoardByIDForOwner(id uuid.UUID, ownerID uuid.UUID) (*entity.Board, error) {
+	const fn = "service.boardService.GetBoardByIDForOwner"
+
+	if id == uuid.Nil {
+		return nil, fmt.Errorf("%s: board ID cannot be nil", fn)
+	}
+
+	if ownerID == uuid.Nil {
+		return nil, fmt.Errorf("%s: owner ID cannot be nil", fn)
+	}
+
+	board, err := s.repo.GetBoardByIDForOwner(id, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return board, nil
+}
+
 // GetBoardsByOwnerID retrieves all boards for a specific owner
 func (s *boardService) GetBoardsByOwnerID(ownerID uuid.UUID) ([]*entity.Board, error) {
 	const fn = "service.boardService.GetBoardsByOwnerID"
@@ -86,11 +109,15 @@ func (s *boardService) GetBoardsByOwnerID(ownerID uuid.UUID) ([]*entity.Board, e
 }
 
 // UpdateBoard updates one or more fields of a board
-func (s *boardService) UpdateBoard(id uuid.UUID, title *string, description *string) error {
+func (s *boardService) UpdateBoard(ownerID uuid.UUID, id uuid.UUID, title *string, description *string) error {
 	const fn = "service.boardService.UpdateBoard"
 
 	if id == uuid.Nil {
 		return fmt.Errorf("%s: board ID cannot be nil", fn)
+	}
+
+	if ownerID == uuid.Nil {
+		return fmt.Errorf("%s: owner ID cannot be nil", fn)
 	}
 
 	updates := make(map[string]interface{})
@@ -111,7 +138,7 @@ func (s *boardService) UpdateBoard(id uuid.UUID, title *string, description *str
 		return fmt.Errorf("%s: no fields to update", fn)
 	}
 
-	err := s.repo.UpdateBoardFields(id, updates)
+	err := s.repo.UpdateBoardFieldsForOwner(id, ownerID, updates)
 	if err != nil {
 		return fmt.Errorf("%s: %w", fn, err)
 	}
@@ -120,14 +147,18 @@ func (s *boardService) UpdateBoard(id uuid.UUID, title *string, description *str
 }
 
 // DeleteBoard deletes a board by ID
-func (s *boardService) DeleteBoard(id uuid.UUID) error {
+func (s *boardService) DeleteBoard(ownerID uuid.UUID, id uuid.UUID) error {
 	const fn = "service.boardService.DeleteBoard"
 
 	if id == uuid.Nil {
 		return fmt.Errorf("%s: board ID cannot be nil", fn)
 	}
 
-	err := s.repo.DeleteBoard(id)
+	if ownerID == uuid.Nil {
+		return fmt.Errorf("%s: owner ID cannot be nil", fn)
+	}
+
+	err := s.repo.DeleteBoardForOwner(id, ownerID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", fn, err)
 	}

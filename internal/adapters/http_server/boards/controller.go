@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"student-kanban/internal/domain/entity"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -15,9 +16,9 @@ const UserIDKey = "userID"
 type BoardService interface {
 	CreateBoard(ownerID uuid.UUID, title, description string) (string, error)
 	GetBoardsByOwnerID(ownerID uuid.UUID) ([]*entity.Board, error)
-	GetBoardByID(id uuid.UUID) (*entity.Board, error)
-	UpdateBoard(id uuid.UUID, title *string, description *string) error
-	DeleteBoard(id uuid.UUID) error
+	GetBoardByIDForOwner(id uuid.UUID, ownerID uuid.UUID) (*entity.Board, error)
+	UpdateBoard(ownerID uuid.UUID, id uuid.UUID, title *string, description *string) error
+	DeleteBoard(ownerID uuid.UUID, id uuid.UUID) error
 }
 
 type boardController struct {
@@ -98,6 +99,11 @@ func (c *boardController) GetBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.GetBoard"
 	log := slog.With(slog.String("fn", fn))
 
+	userID, err := getAuthorizedUserID(ctx, log)
+	if err != nil {
+		return
+	}
+
 	boardIDParam := ctx.Param("id")
 	boardID, err := uuid.Parse(boardIDParam)
 	if err != nil {
@@ -106,7 +112,7 @@ func (c *boardController) GetBoard(ctx *gin.Context) {
 		return
 	}
 
-	board, err := c.boardService.GetBoardByID(boardID)
+	board, err := c.boardService.GetBoardByIDForOwner(boardID, userID)
 	if err != nil {
 		if errors.Is(err, entity.ErrBoardNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Board not found"})
@@ -134,18 +140,8 @@ func (c *boardController) GetUserBoards(ctx *gin.Context) {
 	const fn = "adapters.controller.GetUserBoards"
 	log := slog.With(slog.String("fn", fn))
 
-	// Get user ID from context
-	userIDValue, exists := ctx.Get(UserIDKey)
-	if !exists {
-		log.Error("user ID not found in context")
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
-	userID, ok := userIDValue.(uuid.UUID)
-	if !ok {
-		log.Error("invalid user ID type in context")
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+	userID, err := getAuthorizedUserID(ctx, log)
+	if err != nil {
 		return
 	}
 
@@ -182,6 +178,11 @@ func (c *boardController) UpdateBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.UpdateBoard"
 	log := slog.With(slog.String("fn", fn))
 
+	userID, err := getAuthorizedUserID(ctx, log)
+	if err != nil {
+		return
+	}
+
 	boardIDParam := ctx.Param("id")
 	boardID, err := uuid.Parse(boardIDParam)
 	if err != nil {
@@ -203,7 +204,7 @@ func (c *boardController) UpdateBoard(ctx *gin.Context) {
 		return
 	}
 
-	err = c.boardService.UpdateBoard(boardID, request.Title, request.Description)
+	err = c.boardService.UpdateBoard(userID, boardID, request.Title, request.Description)
 	if err != nil {
 		if errors.Is(err, entity.ErrBoardNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Board not found"})
@@ -233,6 +234,11 @@ func (c *boardController) DeleteBoard(ctx *gin.Context) {
 	const fn = "adapters.controller.DeleteBoard"
 	log := slog.With(slog.String("fn", fn))
 
+	userID, err := getAuthorizedUserID(ctx, log)
+	if err != nil {
+		return
+	}
+
 	boardIDParam := ctx.Param("id")
 	boardID, err := uuid.Parse(boardIDParam)
 	if err != nil {
@@ -241,7 +247,7 @@ func (c *boardController) DeleteBoard(ctx *gin.Context) {
 		return
 	}
 
-	err = c.boardService.DeleteBoard(boardID)
+	err = c.boardService.DeleteBoard(userID, boardID)
 	if err != nil {
 		if errors.Is(err, entity.ErrBoardNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Board not found"})
@@ -255,6 +261,24 @@ func (c *boardController) DeleteBoard(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Board deleted successfully"})
 }
 
+func getAuthorizedUserID(ctx *gin.Context, log *slog.Logger) (uuid.UUID, error) {
+	userIDValue, exists := ctx.Get(UserIDKey)
+	if !exists {
+		log.Error("user ID not found in context")
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return uuid.Nil, errors.New("user not authenticated")
+	}
+
+	userID, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		log.Error("invalid user ID type in context")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return uuid.Nil, errors.New("invalid user ID")
+	}
+
+	return userID, nil
+}
+
 // Helper function to convert entity to response DTO
 func toBoardResponse(board *entity.Board) boardResponse {
 	return boardResponse{
@@ -262,5 +286,7 @@ func toBoardResponse(board *entity.Board) boardResponse {
 		OwnerID:     board.OwnerID.String(),
 		Title:       board.Title,
 		Description: board.Description,
+		CreatedAt:   board.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   board.UpdatedAt.Format(time.RFC3339),
 	}
 }

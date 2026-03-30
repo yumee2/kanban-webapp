@@ -6,6 +6,7 @@ type UserController interface {
 	Register(ctx *gin.Context)
 	Login(ctx *gin.Context)
 	Refresh(ctx *gin.Context)
+	Logout(ctx *gin.Context)
 }
 
 func SetupAuthRoutes(r *gin.Engine, authController UserController) {
@@ -14,5 +15,6 @@ func SetupAuthRoutes(r *gin.Engine, authController UserController) {
 		urlGroup.POST("/register", authController.Register)
 		urlGroup.POST("/login", authController.Login)
 		urlGroup.POST("/refresh", authController.Refresh)
+		urlGroup.POST("/logout", authController.Logout)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"student-kanban/internal/domain/entity"
 	"student-kanban/internal/domain/services"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -24,9 +25,19 @@ type cardResponse struct {
 	ListID      string              `json:"list_id"`
 	Title       string              `json:"title"`
 	Description *string             `json:"description"`
+	DueDate     *time.Time          `json:"due_date"`
 	Priority    entity.CardPriority `json:"priority"`
 	Position    float64             `json:"position"`
+	IsFavorite  bool                `json:"is_favorite"`
 	IsArchived  bool                `json:"is_archived"`
+	Tags        []tagResponse       `json:"tags"`
+}
+
+type tagResponse struct {
+	ID      string `json:"id"`
+	BoardID string `json:"board_id"`
+	Name    string `json:"name"`
+	Color   string `json:"color"`
 }
 
 type ListHandler struct {
@@ -133,7 +144,7 @@ func (h *ListHandler) GetListsByBoard(c *gin.Context) {
 		return
 	}
 
-	listResponses := make([]listResponse, len(lists))
+	listResponses := make([]listResponse, 0, len(lists))
 
 	for _, list := range lists {
 		listResponses = append(listResponses, toListResponse(list))
@@ -271,14 +282,27 @@ type listResponse struct {
 func toListResponse(list *services.ListDTO) listResponse {
 	cards := make([]cardResponse, len(list.Cards))
 	for i, card := range list.Cards {
+		tags := make([]tagResponse, len(card.Tags))
+		for j, tag := range card.Tags {
+			tags[j] = tagResponse{
+				ID:      tag.ID.String(),
+				BoardID: tag.BoardID.String(),
+				Name:    tag.Name,
+				Color:   tag.Color,
+			}
+		}
+
 		cards[i] = cardResponse{
 			ID:          card.ID.String(),
 			ListID:      card.ListID.String(),
 			Title:       card.Title,
 			Description: card.Description,
+			DueDate:     card.DueDate,
 			Priority:    card.Priority,
 			Position:    card.Position,
+			IsFavorite:  card.IsFavorite,
 			IsArchived:  card.IsArchived,
+			Tags:        tags,
 		}
 	}
 

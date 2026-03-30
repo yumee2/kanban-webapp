@@ -6,16 +6,17 @@ import (
 	"log/slog"
 	"net/http"
 	"student-kanban/internal/domain/entity"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type CardService interface {
-	CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, priority entity.CardPriority) (*entity.Card, error)
+	CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, dueDate *time.Time, priority entity.CardPriority, isFavorite bool) (*entity.Card, error)
 	GetCardByID(ctx context.Context, id uuid.UUID) (*entity.Card, error)
 	GetCardsByListID(ctx context.Context, listID uuid.UUID) ([]*entity.Card, error)
-	UpdateCard(ctx context.Context, id uuid.UUID, title *string, description *string, priority *entity.CardPriority, position *float64, isArchived *bool) (*entity.Card, error)
+	UpdateCard(ctx context.Context, id uuid.UUID, title *string, description *string, dueDate *time.Time, priority *entity.CardPriority, position *float64, isFavorite *bool, isArchived *bool) (*entity.Card, error)
 	DeleteCard(ctx context.Context, id uuid.UUID) error
 	MoveCard(ctx context.Context, id uuid.UUID, position float64, listID *uuid.UUID) (*entity.Card, error)
 }
@@ -54,7 +55,7 @@ func (c *cardController) CreateCard(ctx *gin.Context) {
 		return
 	}
 
-	card, err := c.cardService.CreateCard(ctx.Request.Context(), request.ListID, request.Title, request.Description, request.Priority)
+	card, err := c.cardService.CreateCard(ctx.Request.Context(), request.ListID, request.Title, request.Description, request.DueDate, request.Priority, request.IsFavorite)
 	if err != nil {
 		if errors.Is(err, entity.ErrInvalidListID) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid list ID"})
@@ -124,7 +125,7 @@ func (c *cardController) GetCardsByList(ctx *gin.Context) {
 	const fn = "adapters.controller.GetCardsByList"
 	log := slog.With(slog.String("fn", fn))
 
-	listID, err := uuid.Parse(ctx.Query("list_id"))
+	listID, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		log.Error("invalid list ID", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid list ID"})
@@ -178,12 +179,12 @@ func (c *cardController) UpdateCard(ctx *gin.Context) {
 		return
 	}
 
-	if request.Title == nil && request.Description == nil && request.Priority == nil && request.Position == nil && request.IsArchived == nil {
+	if request.Title == nil && request.Description == nil && request.DueDate == nil && request.Priority == nil && request.Position == nil && request.IsFavorite == nil && request.IsArchived == nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "At least one field must be provided"})
 		return
 	}
 
-	card, err := c.cardService.UpdateCard(ctx.Request.Context(), cardID, request.Title, request.Description, request.Priority, request.Position, request.IsArchived)
+	card, err := c.cardService.UpdateCard(ctx.Request.Context(), cardID, request.Title, request.Description, request.DueDate, request.Priority, request.Position, request.IsFavorite, request.IsArchived)
 	if err != nil {
 		if errors.Is(err, entity.ErrCardNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
@@ -294,8 +295,10 @@ func ToCardResponse(card *entity.Card) CardResponse {
 		ListID:      card.ListID.String(),
 		Title:       card.Title,
 		Description: card.Description,
+		DueDate:     card.DueDate,
 		Priority:    card.Priority,
 		Position:    card.Position,
+		IsFavorite:  card.IsFavorite,
 		IsArchived:  card.IsArchived,
 	}
 }

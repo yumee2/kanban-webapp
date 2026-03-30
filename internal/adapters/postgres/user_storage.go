@@ -74,3 +74,14 @@ func (s *userStorage) ValidateRefreshToken(tokenValue string) (*entity.RefreshTo
 
 	return &token, nil
 }
+
+func (s *userStorage) DeleteRefreshToken(tokenValue string) error {
+	const fn = "adapters.repository.DeleteRefreshToken"
+
+	result := s.db.Where("token_hash = ?", tokenValue).Delete(&entity.RefreshToken{})
+	if result.Error != nil {
+		return fmt.Errorf("%s: database error: %w", fn, result.Error)
+	}
+
+	return nil
+}

@@ -1,0 +1,7 @@
+./basemodel.go
+./board.go
+./card.go
+./errors.go
+./list.go
+./tag.go
+./user.go

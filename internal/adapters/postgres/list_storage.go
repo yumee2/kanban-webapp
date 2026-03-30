@@ -47,6 +47,10 @@ func (r *listRepository) FindByBoardID(ctx context.Context, boardID uuid.UUID) (
 	if err := r.db.WithContext(ctx).
 		Where("board_id = ?", boardID).
 		Order("position ASC").
+		Preload("Cards", func(db *gorm.DB) *gorm.DB {
+			return db.Order("position ASC")
+		}).
+		Preload("Cards.Tags").
 		Find(&lists).Error; err != nil {
 		return nil, err
 	}

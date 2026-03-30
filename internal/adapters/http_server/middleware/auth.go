@@ -54,23 +54,42 @@ func parseJWTToken(tokenString string) (string, error) {
 	jwtSecret := os.Getenv("JWT_SECRET")
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("unexpected signing method")
+		}
 		return []byte(jwtSecret), nil
 	})
 	if err != nil {
 		return "", err
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
-	userID := claims["user_id"].(string)
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid token claims")
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok || userID == "" {
+		return "", errors.New("user_id claim is missing")
+	}
 
 	return userID, nil
 }
 
-func GetUserIDFromContext(c *gin.Context) (string, error) {
+func GetUserIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	userID, exists := c.Get(UserIDKey)
 	if !exists {
-		return "", errors.New("userID not found in context")
+		return uuid.Nil, errors.New("userID not found in context")
 	}
 
-	return userID.(string), nil
+	userUUID, ok := userID.(uuid.UUID)
+	if !ok {
+		return uuid.Nil, errors.New("userID has invalid type")
+	}
+
+	return userUUID, nil
 }

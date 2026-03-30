@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
+	"os"
 	boardhttp "student-kanban/internal/adapters/http_server/boards"
 	cardshttp "student-kanban/internal/adapters/http_server/cards"
 	listshttp "student-kanban/internal/adapters/http_server/lists"
@@ -69,6 +71,7 @@ func main() {
 func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService,
 	listService listshttp.ListService, cardService cardshttp.CardService, tagService tagshttp.TagService) *gin.Engine {
 	r := gin.Default()
+	r.Use(corsMiddleware())
 
 	authController := userhttp.NewAuthController(userService)
 	boardController := boardhttp.NewBoardController(boardService)
@@ -87,6 +90,31 @@ func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.Bo
 	return r
 }
 
+func corsMiddleware() gin.HandlerFunc {
+	allowedOrigin := os.Getenv("CLIENT_ORIGIN")
+	if allowedOrigin == "" {
+		allowedOrigin = "http://localhost:5173"
+	}
+
+	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
+		if origin == allowedOrigin {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
 
 	dsn := fmt.Sprintf("host=%s user=%s "+
@@ -101,7 +129,7 @@ func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&entity.User{}, &entity.Board{}, &entity.List{}, &entity.Card{}, &entity.RefreshToken{})
+	err = db.AutoMigrate(&entity.User{}, &entity.Board{}, &entity.List{}, &entity.Tag{}, &entity.Card{}, &entity.RefreshToken{})
 
 	if err != nil {
 		return nil, err

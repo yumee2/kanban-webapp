@@ -1,6 +1,10 @@
 package entity
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CardPriority string
 
@@ -18,12 +22,14 @@ type Card struct {
 
 	Title       string  `gorm:"not null"`
 	Description *string `gorm:"type:varchar(500)"`
+	DueDate     *time.Time
 
 	Priority CardPriority `gorm:"type:text;default:'medium'"`
 
 	Tags []Tag `gorm:"many2many:card_tags;"`
 
 	Position   float64 `gorm:"not null"`
+	IsFavorite bool    `gorm:"default:false"`
 	IsArchived bool    `gorm:"default:false"`
 }
 

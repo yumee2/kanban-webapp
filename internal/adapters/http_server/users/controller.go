@@ -4,8 +4,10 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"os"
 	"student-kanban/internal/domain/entity"
 	"student-kanban/internal/domain/services"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +15,8 @@ import (
 type UserService interface {
 	RegisterNewUser(email, password, name string) (*services.JWTTokenPair, error)
 	LoginExistingUser(email string, password string) (*services.JWTTokenPair, error)
-	ValidateRefreshToken(refreshToken string) (string, error)
+	RefreshSession(refreshToken string) (*services.JWTTokenPair, error)
+	Logout(refreshToken string) error
 }
 
 type authController struct {
@@ -25,9 +28,10 @@ func NewAuthController(authServ UserService) *authController {
 }
 
 type JWTTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken string `json:"access_token"`
 }
+
+const refreshCookieName = "refresh_token"
 
 // Register godoc
 // @Summary      Register a new user
@@ -64,10 +68,8 @@ func (c *authController) Register(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, JWTTokenResponse{
-		AccessToken:  jwtTokenPair.AccessToken,
-		RefreshToken: jwtTokenPair.RefreshToken,
-	})
+	setRefreshCookie(ctx, jwtTokenPair.RefreshToken, jwtTokenPair.RefreshExprireTime)
+	ctx.JSON(http.StatusCreated, JWTTokenResponse{AccessToken: jwtTokenPair.AccessToken})
 }
 
 // Login godoc
@@ -110,10 +112,8 @@ func (c *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, JWTTokenResponse{
-		AccessToken:  jwtTokenPair.AccessToken,
-		RefreshToken: jwtTokenPair.RefreshToken,
-	})
+	setRefreshCookie(ctx, jwtTokenPair.RefreshToken, jwtTokenPair.RefreshExprireTime)
+	ctx.JSON(http.StatusCreated, JWTTokenResponse{AccessToken: jwtTokenPair.AccessToken})
 }
 
 // Refresh godoc
@@ -122,26 +122,19 @@ func (c *authController) Login(ctx *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        body  body      refreshRequest    true  "Refresh token"
 // @Success      200   {object}  map[string]string
 // @Failure      400   {object}  map[string]string
 // @Failure      401   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /auth/refresh [post]
 func (c *authController) Refresh(ctx *gin.Context) {
-	const fn = "adapters.controller.Refresh"
-	log := slog.With(
-		slog.String("fn", fn),
-	)
-
-	var request refreshRequest
-	if err := ctx.BindJSON(&request); err != nil {
-		log.Error("failed to parse json body", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	refreshToken, err := ctx.Cookie(refreshCookieName)
+	if err != nil || refreshToken == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token cookie not found"})
 		return
 	}
 
-	accessToken, err := c.authService.ValidateRefreshToken(request.RefreshToken)
+	jwtTokenPair, err := c.authService.RefreshSession(refreshToken)
 	if err != nil {
 		if errors.Is(err, entity.ErrRefreshTokenNotFound) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token not found"})
@@ -155,5 +148,43 @@ func (c *authController) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken})
+	setRefreshCookie(ctx, jwtTokenPair.RefreshToken, jwtTokenPair.RefreshExprireTime)
+	ctx.JSON(http.StatusOK, gin.H{"access_token": jwtTokenPair.AccessToken})
+}
+
+func (c *authController) Logout(ctx *gin.Context) {
+	refreshToken, _ := ctx.Cookie(refreshCookieName)
+	if err := c.authService.Logout(refreshToken); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to logout"})
+		return
+	}
+
+	clearRefreshCookie(ctx)
+	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out"})
+}
+
+func setRefreshCookie(ctx *gin.Context, token string, expiresAt time.Time) {
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie(
+		refreshCookieName,
+		token,
+		int(time.Until(expiresAt).Seconds()),
+		"/",
+		getCookieDomain(),
+		isSecureCookies(),
+		true,
+	)
+}
+
+func clearRefreshCookie(ctx *gin.Context) {
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie(refreshCookieName, "", -1, "/", getCookieDomain(), isSecureCookies(), true)
+}
+
+func getCookieDomain() string {
+	return os.Getenv("COOKIE_DOMAIN")
+}
+
+func isSecureCookies() bool {
+	return os.Getenv("COOKIE_SECURE") == "true"
 }

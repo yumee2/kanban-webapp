@@ -26,6 +26,7 @@ type UserRepository interface {
 	GetUserByEmail(email string) (*entity.User, error)
 	CreateRefreshToken(token *entity.RefreshToken) error
 	ValidateRefreshToken(tokenValue string) (*entity.RefreshToken, error)
+	DeleteRefreshToken(tokenValue string) error
 }
 
 type userService struct {
@@ -123,7 +124,7 @@ func (s *userService) LoginExistingUser(email string, password string) (*JWTToke
 }
 
 // Return newly generated access token or error
-func (s *userService) ValidateRefreshToken(refreshToken string) (string, error) {
+func (s *userService) RefreshSession(refreshToken string) (*JWTTokenPair, error) {
 	const fn = "domain.service.ValidateRefreshToken"
 	log := slog.With(
 		slog.String("fn", fn),
@@ -134,24 +135,44 @@ func (s *userService) ValidateRefreshToken(refreshToken string) (string, error) 
 	if err != nil {
 		if errors.Is(err, entity.ErrRefreshTokenNotFound) {
 			log.Error("provided token not found", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-			return "", entity.ErrRefreshTokenNotFound
+			return &JWTTokenPair{}, entity.ErrRefreshTokenNotFound
 		}
 		log.Error("failed to get a refresh token from database", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
-		return "", err
+		return &JWTTokenPair{}, err
 	}
 
 	if !refresh.IsValid() { // check if the token is expired or not
-		return "", entity.ErrRefreshTokenExpired
+		return &JWTTokenPair{}, entity.ErrRefreshTokenExpired
 	}
 
 	jwtTokens, err := generateJWTTokenPair(refresh.UserID)
 	if err != nil {
 		log.Error("failed to create JWT tokens", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())},
 			slog.Attr{Key: "UserUUID", Value: slog.StringValue(refresh.UserID)})
-		return "", err
+		return &JWTTokenPair{}, err
 	}
 
-	return jwtTokens.AccessToken, nil
+	if err = s.userRepo.DeleteRefreshToken(hashedToken); err != nil {
+		log.Error("failed to delete old refresh token", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		return &JWTTokenPair{}, err
+	}
+
+	newRefreshToken := &entity.RefreshToken{TokenHash: jwtTokens.RefreshToken, UserID: refresh.UserID, ExpiresAt: jwtTokens.RefreshExprireTime}
+	newRefreshToken.HashToken(jwtTokens.RefreshToken)
+	if err = s.userRepo.CreateRefreshToken(newRefreshToken); err != nil {
+		log.Error("failed to store refreshed token in database", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
+		return &JWTTokenPair{}, err
+	}
+
+	return jwtTokens, nil
+}
+
+func (s *userService) Logout(refreshToken string) error {
+	if refreshToken == "" {
+		return nil
+	}
+
+	return s.userRepo.DeleteRefreshToken(hashToken(refreshToken))
 }
 
 func hashPassword(password string) (string, error) {

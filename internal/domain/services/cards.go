@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"student-kanban/internal/domain/entity"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -32,7 +33,7 @@ func NewCardService(cardRepo CardRepository, listRepo listRepository) *cardServi
 	}
 }
 
-func (s *cardService) CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, priority entity.CardPriority) (*entity.Card, error) {
+func (s *cardService) CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, dueDate *time.Time, priority entity.CardPriority, isFavorite bool) (*entity.Card, error) {
 	if title == "" {
 		return nil, entity.ErrInvalidCardTitle
 	}
@@ -60,8 +61,10 @@ func (s *cardService) CreateCard(ctx context.Context, listID uuid.UUID, title st
 		ListID:      listID,
 		Title:       title,
 		Description: description,
+		DueDate:     dueDate,
 		Priority:    priority,
 		Position:    maxPos + 1,
+		IsFavorite:  isFavorite,
 	}
 
 	if err := s.cardRepo.Create(ctx, card); err != nil {
@@ -82,7 +85,7 @@ func (s *cardService) GetCardsByListID(ctx context.Context, listID uuid.UUID) ([
 	return s.cardRepo.GetAllByListID(ctx, listID)
 }
 
-func (s *cardService) UpdateCard(ctx context.Context, id uuid.UUID, title *string, description *string, priority *entity.CardPriority, position *float64, isArchived *bool) (*entity.Card, error) {
+func (s *cardService) UpdateCard(ctx context.Context, id uuid.UUID, title *string, description *string, dueDate *time.Time, priority *entity.CardPriority, position *float64, isFavorite *bool, isArchived *bool) (*entity.Card, error) {
 	card, err := s.cardRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -97,6 +100,9 @@ func (s *cardService) UpdateCard(ctx context.Context, id uuid.UUID, title *strin
 	if description != nil {
 		card.Description = description
 	}
+	if dueDate != nil {
+		card.DueDate = dueDate
+	}
 	if priority != nil {
 		if !priority.IsValid() {
 			return nil, entity.ErrInvalidCardPriority
@@ -105,6 +111,9 @@ func (s *cardService) UpdateCard(ctx context.Context, id uuid.UUID, title *strin
 	}
 	if position != nil {
 		card.Position = *position
+	}
+	if isFavorite != nil {
+		card.IsFavorite = *isFavorite
 	}
 	if isArchived != nil {
 		card.IsArchived = *isArchived

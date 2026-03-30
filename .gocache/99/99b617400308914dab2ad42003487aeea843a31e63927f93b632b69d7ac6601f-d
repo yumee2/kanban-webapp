@@ -1,0 +1,5 @@
+./board_storage.go
+./card_storage.go
+./list_storage.go
+./tags_storage.go
+./user_storage.go
