@@ -81,19 +81,36 @@ func (r *listRepository) Update(ctx context.Context, list *entity.List) error {
 
 // Delete deletes a list by its ID
 func (r *listRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	result := r.db.WithContext(ctx).
-		Where("id = ?", id).
-		Delete(&entity.List{})
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var list entity.List
+		if err := tx.Select("id").Where("id = ?", id).First(&list).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return entity.ErrListNotFound
+			}
+			return err
+		}
 
-	if result.Error != nil {
-		return result.Error
-	}
+		var cardIDs []uuid.UUID
+		if err := tx.Model(&entity.Card{}).Where("list_id = ?", id).Pluck("id", &cardIDs).Error; err != nil {
+			return err
+		}
 
-	if result.RowsAffected == 0 {
-		return entity.ErrListNotFound
-	}
+		if len(cardIDs) > 0 {
+			if err := tx.Table("card_tags").Where("card_id IN ?", cardIDs).Delete(nil).Error; err != nil {
+				return err
+			}
 
-	return nil
+			if err := tx.Where("id IN ?", cardIDs).Delete(&entity.Card{}).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Where("id = ?", id).Delete(&entity.List{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // UpdatePosition updates only the position of a list

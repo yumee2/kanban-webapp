@@ -51,8 +51,13 @@ func (r *cardRepository) Update(ctx context.Context, c *entity.Card) error {
 }
 
 func (r *cardRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).
-		Delete(&entity.Card{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("card_tags").Where("card_id = ?", id).Delete(nil).Error; err != nil {
+			return err
+		}
+
+		return tx.Delete(&entity.Card{}, "id = ?", id).Error
+	})
 }
 
 func (r *cardRepository) GetMaxPosition(ctx context.Context, listID uuid.UUID) (float64, error) {

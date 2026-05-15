@@ -89,17 +89,6 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Refresh access token",
-                "parameters": [
-                    {
-                        "description": "Refresh token",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/userhttp.refreshRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1162,6 +1151,229 @@ const docTemplate = `{
                 }
             }
         },
+        "/integrations/moodle/connect": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Authenticates against Moodle with user credentials, exchanges them for a token, and stores the connection for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moodle"
+                ],
+                "summary": "Connect a Moodle account",
+                "parameters": [
+                    {
+                        "description": "Moodle credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/moodlehttp.connectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.MoodleConnectionInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/integrations/moodle/courses": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the authenticated user's enrolled courses from their linked Moodle account",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moodle"
+                ],
+                "summary": "Get enrolled Moodle courses",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/moodle.Course"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/integrations/moodle/import-board": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a standard board with default lists and imports supported Moodle activities into the first list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moodle"
+                ],
+                "summary": "Import a Moodle course as a board",
+                "parameters": [
+                    {
+                        "description": "Course import payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/moodlehttp.importBoardRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/moodlehttp.importBoardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/lists": {
             "post": {
                 "security": [
@@ -1816,10 +2028,16 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "due_date": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "is_archived": {
+                    "type": "boolean"
+                },
+                "is_favorite": {
                     "type": "boolean"
                 },
                 "list_id": {
@@ -1845,6 +2063,12 @@ const docTemplate = `{
             "properties": {
                 "description": {
                     "type": "string"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "is_favorite": {
+                    "type": "boolean"
                 },
                 "list_id": {
                     "type": "string"
@@ -1877,7 +2101,13 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "due_date": {
+                    "type": "string"
+                },
                 "is_archived": {
+                    "type": "boolean"
+                },
+                "is_favorite": {
                     "type": "boolean"
                 },
                 "position": {
@@ -1910,10 +2140,16 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "due_date": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "is_archived": {
+                    "type": "boolean"
+                },
+                "is_favorite": {
                     "type": "boolean"
                 },
                 "list_id": {
@@ -1924,6 +2160,12 @@ const docTemplate = `{
                 },
                 "priority": {
                     "$ref": "#/definitions/entity.CardPriority"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/listshttp.tagResponse"
+                    }
                 },
                 "title": {
                     "type": "string"
@@ -1953,16 +2195,103 @@ const docTemplate = `{
                 }
             }
         },
+        "listshttp.tagResponse": {
+            "type": "object",
+            "properties": {
+                "board_id": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "moodle.Course": {
+            "type": "object",
+            "properties": {
+                "displayname": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "shortname": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "viewurl": {
+                    "type": "string"
+                }
+            }
+        },
+        "moodlehttp.connectRequest": {
+            "type": "object",
+            "required": [
+                "base_url",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "base_url": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "moodlehttp.importBoardRequest": {
+            "type": "object",
+            "required": [
+                "course_id"
+            ],
+            "properties": {
+                "course_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "moodlehttp.importBoardResponse": {
+            "type": "object",
+            "properties": {
+                "board_id": {
+                    "type": "string"
+                }
+            }
+        },
         "services.CardDTO": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string"
                 },
+                "due_date": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
                 "is_archived": {
+                    "type": "boolean"
+                },
+                "is_favorite": {
                     "type": "boolean"
                 },
                 "list_id": {
@@ -1973,6 +2302,12 @@ const docTemplate = `{
                 },
                 "priority": {
                     "$ref": "#/definitions/entity.CardPriority"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.TagDTO"
+                    }
                 },
                 "title": {
                     "type": "string"
@@ -2022,6 +2357,46 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.MoodleConnectionInfo": {
+            "type": "object",
+            "properties": {
+                "base_url": {
+                    "type": "string"
+                },
+                "moodle_full_name": {
+                    "type": "string"
+                },
+                "moodle_site_name": {
+                    "type": "string"
+                },
+                "moodle_user_id": {
+                    "type": "integer"
+                },
+                "moodle_username": {
+                    "type": "string"
+                },
+                "service_short_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.TagDTO": {
+            "type": "object",
+            "properties": {
+                "board_id": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -2089,9 +2464,6 @@ const docTemplate = `{
             "properties": {
                 "access_token": {
                     "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
                 }
             }
         },
@@ -2108,17 +2480,6 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 6
-                }
-            }
-        },
-        "userhttp.refreshRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
                 }
             }
         },

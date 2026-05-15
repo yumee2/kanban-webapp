@@ -11,5 +11,5 @@ type List struct {
 	Title    string  `gorm:"not null"`
 	Position float64 `gorm:"not null"` // ordering
 
-	Cards []Card `gorm:"foreignKey:ListID"`
+	Cards []Card `gorm:"foreignKey:ListID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

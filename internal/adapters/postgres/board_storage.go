@@ -177,15 +177,49 @@ func (s *boardStorage) DeleteBoard(id uuid.UUID) error {
 func (s *boardStorage) DeleteBoardForOwner(id uuid.UUID, ownerID uuid.UUID) error {
 	const fn = "adapters.repository.DeleteBoardForOwner"
 
-	result := s.db.Delete(&entity.Board{}, "id = ? AND owner_id = ?", id, ownerID)
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		var board entity.Board
+		if err := tx.Select("id").Where("id = ? AND owner_id = ?", id, ownerID).First(&board).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return entity.ErrBoardNotFound
+			}
+			return fmt.Errorf("%s: %w", fn, err)
+		}
 
-	if result.Error != nil {
-		return fmt.Errorf("%s: %w", fn, result.Error)
-	}
+		var listIDs []uuid.UUID
+		if err := tx.Model(&entity.List{}).Where("board_id = ?", id).Pluck("id", &listIDs).Error; err != nil {
+			return fmt.Errorf("%s: %w", fn, err)
+		}
 
-	if result.RowsAffected == 0 {
-		return entity.ErrBoardNotFound
-	}
+		if len(listIDs) > 0 {
+			var cardIDs []uuid.UUID
+			if err := tx.Model(&entity.Card{}).Where("list_id IN ?", listIDs).Pluck("id", &cardIDs).Error; err != nil {
+				return fmt.Errorf("%s: %w", fn, err)
+			}
 
-	return nil
+			if len(cardIDs) > 0 {
+				if err := tx.Table("card_tags").Where("card_id IN ?", cardIDs).Delete(nil).Error; err != nil {
+					return fmt.Errorf("%s: %w", fn, err)
+				}
+
+				if err := tx.Where("id IN ?", cardIDs).Delete(&entity.Card{}).Error; err != nil {
+					return fmt.Errorf("%s: %w", fn, err)
+				}
+			}
+
+			if err := tx.Where("id IN ?", listIDs).Delete(&entity.List{}).Error; err != nil {
+				return fmt.Errorf("%s: %w", fn, err)
+			}
+		}
+
+		if err := tx.Where("board_id = ?", id).Delete(&entity.Tag{}).Error; err != nil {
+			return fmt.Errorf("%s: %w", fn, err)
+		}
+
+		if err := tx.Delete(&entity.Board{}, "id = ? AND owner_id = ?", id, ownerID).Error; err != nil {
+			return fmt.Errorf("%s: %w", fn, err)
+		}
+
+		return nil
+	})
 }

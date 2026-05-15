@@ -9,8 +9,10 @@ import (
 	boardhttp "student-kanban/internal/adapters/http_server/boards"
 	cardshttp "student-kanban/internal/adapters/http_server/cards"
 	listshttp "student-kanban/internal/adapters/http_server/lists"
+	moodlehttp "student-kanban/internal/adapters/http_server/moodle"
 	tagshttp "student-kanban/internal/adapters/http_server/tags"
 	userhttp "student-kanban/internal/adapters/http_server/users"
+	"student-kanban/internal/adapters/moodle"
 	storage "student-kanban/internal/adapters/postgres"
 	"student-kanban/internal/config"
 	"student-kanban/internal/domain/entity"
@@ -61,7 +63,11 @@ func main() {
 	tagsRepo := storage.NewTagRepository(db)
 	tagService := services.NewTagService(tagsRepo, boardRepo, cardRepo)
 
-	r := setUpHttpServer(userService, boardService, listService, cardService, tagService)
+	moodleConnectionRepo := storage.NewMoodleConnectionStorage(db)
+	moodleClient := moodle.NewClient()
+	moodleConnectionService := services.NewMoodleConnectionService(moodleConnectionRepo, moodleClient, boardRepo, listRepo, cardRepo)
+
+	r := setUpHttpServer(userService, boardService, listService, cardService, tagService, moodleConnectionService)
 	if err := r.Run(cfg.Address); err != nil {
 		slog.Error("Failed to start server:", slog.Attr{Key: "error", Value: slog.StringValue(err.Error())})
 	}
@@ -69,7 +75,8 @@ func main() {
 }
 
 func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.BoardService,
-	listService listshttp.ListService, cardService cardshttp.CardService, tagService tagshttp.TagService) *gin.Engine {
+	listService listshttp.ListService, cardService cardshttp.CardService, tagService tagshttp.TagService,
+	moodleService moodlehttp.MoodleService) *gin.Engine {
 	r := gin.Default()
 	r.Use(corsMiddleware())
 
@@ -78,12 +85,14 @@ func setUpHttpServer(userService userhttp.UserService, boardService boardhttp.Bo
 	listController := listshttp.NewListController(listService)
 	cardController := cardshttp.NewCardController(cardService)
 	tagController := tagshttp.NewTagController(tagService)
+	moodleController := moodlehttp.NewController(moodleService)
 
 	userhttp.SetupAuthRoutes(r, authController)
 	boardhttp.SetupBoardRoutes(r, boardController)
 	listshttp.SetupListRoutes(r, listController)
 	cardshttp.SetupCardRoutes(r, cardController)
 	tagshttp.SetupTagRoutes(r, tagController)
+	moodlehttp.SetupRoutes(r, moodleController)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -129,7 +138,7 @@ func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&entity.User{}, &entity.Board{}, &entity.List{}, &entity.Tag{}, &entity.Card{}, &entity.RefreshToken{})
+	err = db.AutoMigrate(&entity.User{}, &entity.Board{}, &entity.List{}, &entity.Tag{}, &entity.Card{}, &entity.RefreshToken{}, &entity.MoodleConnection{})
 
 	if err != nil {
 		return nil, err

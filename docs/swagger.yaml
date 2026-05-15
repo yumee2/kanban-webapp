@@ -40,9 +40,13 @@ definitions:
     properties:
       description:
         type: string
+      due_date:
+        type: string
       id:
         type: string
       is_archived:
+        type: boolean
+      is_favorite:
         type: boolean
       list_id:
         type: string
@@ -57,6 +61,10 @@ definitions:
     properties:
       description:
         type: string
+      due_date:
+        type: string
+      is_favorite:
+        type: boolean
       list_id:
         type: string
       priority:
@@ -80,7 +88,11 @@ definitions:
     properties:
       description:
         type: string
+      due_date:
+        type: string
       is_archived:
+        type: boolean
+      is_favorite:
         type: boolean
       position:
         type: number
@@ -103,9 +115,13 @@ definitions:
     properties:
       description:
         type: string
+      due_date:
+        type: string
       id:
         type: string
       is_archived:
+        type: boolean
+      is_favorite:
         type: boolean
       list_id:
         type: string
@@ -113,6 +129,10 @@ definitions:
         type: number
       priority:
         $ref: '#/definitions/entity.CardPriority'
+      tags:
+        items:
+          $ref: '#/definitions/listshttp.tagResponse'
+        type: array
       title:
         type: string
     type: object
@@ -131,13 +151,70 @@ definitions:
       title:
         type: string
     type: object
+  listshttp.tagResponse:
+    properties:
+      board_id:
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  moodle.Course:
+    properties:
+      displayname:
+        type: string
+      fullname:
+        type: string
+      id:
+        type: integer
+      shortname:
+        type: string
+      summary:
+        type: string
+      viewurl:
+        type: string
+    type: object
+  moodlehttp.connectRequest:
+    properties:
+      base_url:
+        type: string
+      password:
+        type: string
+      service:
+        type: string
+      username:
+        type: string
+    required:
+    - base_url
+    - password
+    - username
+    type: object
+  moodlehttp.importBoardRequest:
+    properties:
+      course_id:
+        type: integer
+    required:
+    - course_id
+    type: object
+  moodlehttp.importBoardResponse:
+    properties:
+      board_id:
+        type: string
+    type: object
   services.CardDTO:
     properties:
       description:
         type: string
+      due_date:
+        type: string
       id:
         type: string
       is_archived:
+        type: boolean
+      is_favorite:
         type: boolean
       list_id:
         type: string
@@ -145,6 +222,10 @@ definitions:
         type: number
       priority:
         $ref: '#/definitions/entity.CardPriority'
+      tags:
+        items:
+          $ref: '#/definitions/services.TagDTO'
+        type: array
       title:
         type: string
     type: object
@@ -177,6 +258,32 @@ definitions:
       title:
         type: string
       updated_at:
+        type: string
+    type: object
+  services.MoodleConnectionInfo:
+    properties:
+      base_url:
+        type: string
+      moodle_full_name:
+        type: string
+      moodle_site_name:
+        type: string
+      moodle_user_id:
+        type: integer
+      moodle_username:
+        type: string
+      service_short_name:
+        type: string
+    type: object
+  services.TagDTO:
+    properties:
+      board_id:
+        type: string
+      color:
+        type: string
+      id:
+        type: string
+      name:
         type: string
     type: object
   services.UpdateListDTO:
@@ -221,8 +328,6 @@ definitions:
     properties:
       access_token:
         type: string
-      refresh_token:
-        type: string
     type: object
   userhttp.loginRequest:
     properties:
@@ -234,13 +339,6 @@ definitions:
     required:
     - email
     - password
-    type: object
-  userhttp.refreshRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
     type: object
   userhttp.registerRequest:
     properties:
@@ -308,13 +406,6 @@ paths:
       consumes:
       - application/json
       description: Validates a refresh token and returns a new access token
-      parameters:
-      - description: Refresh token
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/userhttp.refreshRequest'
       produces:
       - application/json
       responses:
@@ -1005,6 +1096,152 @@ paths:
       summary: Attach a tag to a card
       tags:
       - tags
+  /integrations/moodle/connect:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates against Moodle with user credentials, exchanges them
+        for a token, and stores the connection for the authenticated user
+      parameters:
+      - description: Moodle credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/moodlehttp.connectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.MoodleConnectionInfo'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Connect a Moodle account
+      tags:
+      - moodle
+  /integrations/moodle/courses:
+    get:
+      description: Returns the authenticated user's enrolled courses from their linked
+        Moodle account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/moodle.Course'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get enrolled Moodle courses
+      tags:
+      - moodle
+  /integrations/moodle/import-board:
+    post:
+      consumes:
+      - application/json
+      description: Creates a standard board with default lists and imports supported
+        Moodle activities into the first list
+      parameters:
+      - description: Course import payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/moodlehttp.importBoardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/moodlehttp.importBoardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import a Moodle course as a board
+      tags:
+      - moodle
   /lists:
     post:
       consumes:

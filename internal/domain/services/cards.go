@@ -33,7 +33,9 @@ func NewCardService(cardRepo CardRepository, listRepo listRepository) *cardServi
 	}
 }
 
-func (s *cardService) CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, dueDate *time.Time, priority entity.CardPriority, isFavorite bool) (*entity.Card, error) {
+func (s *cardService) CreateCard(ctx context.Context, userID uuid.UUID, listID uuid.UUID, title string, description *string, dueDate *time.Time, priority entity.CardPriority, isFavorite bool) (*entity.Card, error) {
+	_ = userID
+
 	if title == "" {
 		return nil, entity.ErrInvalidCardTitle
 	}

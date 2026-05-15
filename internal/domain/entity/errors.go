@@ -12,6 +12,14 @@ var (
 	ErrRefreshTokenNotFound = errors.New("refresh token not found")
 )
 
+// Moodle integration related errors
+var (
+	ErrMoodleConnectionNotFound = errors.New("moodle connection not found")
+	ErrMoodleAuthFailed         = errors.New("moodle authentication failed")
+	ErrMoodleCourseNotFound     = errors.New("moodle course not found")
+	ErrMoodleTokenKeyMissing    = errors.New("moodle token encryption key is missing")
+)
+
 // Board related errors
 var (
 	ErrBoardNotFound   = errors.New("board not found")

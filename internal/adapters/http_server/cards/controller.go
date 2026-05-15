@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"student-kanban/internal/adapters/http_server/middleware"
 	"student-kanban/internal/domain/entity"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 type CardService interface {
-	CreateCard(ctx context.Context, listID uuid.UUID, title string, description *string, dueDate *time.Time, priority entity.CardPriority, isFavorite bool) (*entity.Card, error)
+	CreateCard(ctx context.Context, userID uuid.UUID, listID uuid.UUID, title string, description *string, dueDate *time.Time, priority entity.CardPriority, isFavorite bool) (*entity.Card, error)
 	GetCardByID(ctx context.Context, id uuid.UUID) (*entity.Card, error)
 	GetCardsByListID(ctx context.Context, listID uuid.UUID) ([]*entity.Card, error)
 	UpdateCard(ctx context.Context, id uuid.UUID, title *string, description *string, dueDate *time.Time, priority *entity.CardPriority, position *float64, isFavorite *bool, isArchived *bool) (*entity.Card, error)
@@ -48,6 +49,12 @@ func (c *cardController) CreateCard(ctx *gin.Context) {
 	const fn = "adapters.controller.CreateCard"
 	log := slog.With(slog.String("fn", fn))
 
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var request createCardRequest
 	if err := ctx.BindJSON(&request); err != nil {
 		log.Error("failed to parse json body", slog.String("error", err.Error()))
@@ -55,7 +62,7 @@ func (c *cardController) CreateCard(ctx *gin.Context) {
 		return
 	}
 
-	card, err := c.cardService.CreateCard(ctx.Request.Context(), request.ListID, request.Title, request.Description, request.DueDate, request.Priority, request.IsFavorite)
+	card, err := c.cardService.CreateCard(ctx.Request.Context(), userID, request.ListID, request.Title, request.Description, request.DueDate, request.Priority, request.IsFavorite)
 	if err != nil {
 		if errors.Is(err, entity.ErrInvalidListID) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid list ID"})
