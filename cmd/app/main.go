@@ -149,7 +149,7 @@ func MustInitDB(cfg *config.Config) (*gorm.DB, error) {
 
 func LoadEnv() {
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		log.Fatal("Error loading .env file")
 	}
 }

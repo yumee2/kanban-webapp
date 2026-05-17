@@ -29,6 +29,10 @@ type PostgresConnect struct {
 
 func MustLoad() *Config {
 	configPath := "config/config.yaml"
+	if value := os.Getenv("CONFIG_PATH"); value != "" {
+		configPath = value
+	}
+
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		log.Fatalf("config file does not exist: %s", err)
 	}
