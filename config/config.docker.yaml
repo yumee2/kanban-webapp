@@ -1,0 +1,11 @@
+env: "docker"
+http_server:
+  address: ":8003"
+  timeout: 4s
+  idle_timeout: 60s
+postgres_storage:
+  host: "kanban-db"
+  port: 5432
+  user: "kanban"
+  password: "kanbanpass"
+  dbname: "kanban"

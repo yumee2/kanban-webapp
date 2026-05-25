@@ -1,0 +1,11 @@
+env: "local"
+http_server:
+  address: ":8003"
+  timeout: 4s
+  idle_timeout: 60s
+postgres_storage:
+  host: "localhost"
+  port: 5432
+  user: "kanban"
+  password: "9nGoqVA8P0Zlv8SM4xImGEp1fEIinmt1"
+  dbname: "kanban"
